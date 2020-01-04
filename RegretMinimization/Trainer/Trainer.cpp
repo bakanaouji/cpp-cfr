@@ -76,7 +76,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float pi
     if (game.isChanceNode()) {
         float nodeUtil = 0.0f;
         for (int a = 0; a < actionNum; ++a) {
-            Kuhn::Game game_cp(game);
+            auto game_cp(game);
             game_cp.step(a);
             const float chanceProbability = game_cp.chanceProbability();
             nodeUtil += chanceProbability * CFR(game_cp, playerIndex, pi, po * chanceProbability);
@@ -102,7 +102,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float pi
     float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
-        Kuhn::Game game_cp(game);
+        auto game_cp(game);
         game_cp.step(a);
         if (player == playerIndex) {
             utils[a] = CFR(game_cp, playerIndex, pi * strategy[a], po);
@@ -151,7 +151,7 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
     float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
-        Kuhn::Game game_cp(game);
+        auto game_cp(game);
         game_cp.step(a);
         if (player == playerIndex) {
             utils[a] = chanceSamplingCFR(game_cp, playerIndex, pi * strategy[a], po);
@@ -198,7 +198,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     // if current player is not the target player, sample a single action and recursively call cfr
     const int player = game.currentPlayer();
     if (player != playerIndex) {
-        Kuhn::Game game_cp(game);
+        auto game_cp(game);
         std::discrete_distribution<int> dist(strategy, strategy + actionNum);
         game_cp.step(dist(mEngine));
         const float util = externalSamplingCFR(game_cp, playerIndex);
@@ -211,7 +211,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
-        Kuhn::Game game_cp(game);
+        auto game_cp(game);
         game_cp.step(a);
         utils[a] = externalSamplingCFR(game_cp, playerIndex);
         nodeUtil += strategy[a] * utils[a];
@@ -266,7 +266,7 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
 
     // for sampled action, recursively call cfr with additional history and probability
     float util, pTail;
-    Kuhn::Game game_cp(game);
+    auto game_cp(game);
     game_cp.step(action);
     const float newPi = pi * (player == playerIndex ? strategy[action] : 1.0f);
     const float newPo = po * (player == playerIndex ? 1.0f : strategy[action]);
