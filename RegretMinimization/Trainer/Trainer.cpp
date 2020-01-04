@@ -24,7 +24,7 @@ Trainer::Trainer(const std::string &mode) : mEngine((std::random_device()())), m
 void Trainer::train(const int iterations) {
     float ps[mGame->playerNum()];
     for (int i = 0; i < mGame->playerNum(); ++i) {
-        ps[i] = 1.0;
+        ps[i] = 1.0f;
     }
     float utils[mGame->playerNum()];
     for (int i = 0; i < iterations; ++i) {
@@ -81,7 +81,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
         for (int a = 0; a < actionNum; ++a) {
             Kuhn::Game game_cp(game);
             game_cp.step(a);
-            const float chanceProbability = float(game_cp.chanceProbability());
+            const float chanceProbability = game_cp.chanceProbability();
             float pis[game_cp.playerNum()];
             for (int i = 0; i < game_cp.playerNum(); ++i) {
                 pis[i] = playerIndex == i ? ps[i] : chanceProbability * ps[i];
@@ -212,7 +212,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
         std::discrete_distribution<int> dist(strategy, strategy + actionNum);
         game_cp.step(dist(mEngine));
         const float util = externalSamplingCFR(game_cp, playerIndex, depth + 1);
-        node->strategySum(strategy, 1.0);
+        node->strategySum(strategy, 1.0f);
         return util;
     }
 
@@ -239,7 +239,7 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
     // return payoff for terminal states
     const float payoff = game.payoff(playerIndex);
     if (!std::isnan(payoff)) {
-        return std::make_tuple(payoff / s, 1.0);
+        return std::make_tuple(payoff / s, 1.0f);
     }
 
     // get information set node or create it if nonexistant
@@ -259,7 +259,7 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
     float probability[actionNum];
     if (player == playerIndex) {
         for (int a = 0; a < actionNum; ++a) {
-            probability[a] = (epsilon / (float) actionNum) + (1.0 - epsilon) * strategy[a];
+            probability[a] = (epsilon / (float) actionNum) + (1.0f - epsilon) * strategy[a];
         }
     } else {
         for (int a = 0; a < actionNum; ++a) {
@@ -281,7 +281,7 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
 
         // for each action, compute and accumulate counterfactual regret
         for (int a = 0; a < actionNum; ++a) {
-            const float regret = a == action ? W * (1.0 - strategy[action]) * pTail : -W * pTail * strategy[action];
+            const float regret = a == action ? W * (1.0f - strategy[action]) * pTail : -W * pTail * strategy[action];
             const float regretSum = node->regretSum(a) + regret;
             node->regretSum(a, regretSum);
         }

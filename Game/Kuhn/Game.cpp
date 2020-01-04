@@ -10,7 +10,7 @@
 
 namespace Kuhn {
 
-Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1), mChanceProbability(0.0), mFirstBetTurn(-1), mBetPlayerNum(0), mTurnNum(0), mDone(false) {
+Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1), mChanceProbability(0.0f), mFirstBetTurn(-1), mBetPlayerNum(0), mTurnNum(0), mDone(false) {
     for (auto & infoSet : mInfoSets) {
         for (uint8_t & i : infoSet) {
             i = 0;
@@ -54,7 +54,7 @@ void Game::step(const int action) {
     // chance node action
     if (mCurrentPlayer == PlayerNum + 1) {
         constexpr int ChanceAN = ChanceActionNum();
-        mChanceProbability = 1.0 / float(ChanceAN);
+        mChanceProbability = 1.0f / float(ChanceAN);
         for (int i = 0; i < CardNum; ++i) {
             mCards[i] = i;
         }

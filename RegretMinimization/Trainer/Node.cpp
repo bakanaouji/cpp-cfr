@@ -16,10 +16,10 @@ Node::Node(const int actionNum) : mActionNum(actionNum), mAlreadyCalculated(fals
     mStrategySum = new float[actionNum];
     mAverageStrategy = new float[actionNum];
     for (int a = 0; a < actionNum; ++a) {
-        mRegretSum[a] = 0.0;
-        mStrategy[a] = 0.0;
-        mStrategySum[a] = 0.0;
-        mAverageStrategy[a] = 0.0;
+        mRegretSum[a] = 0.0f;
+        mStrategy[a] = 0.0f;
+        mStrategySum[a] = 0.0f;
+        mAverageStrategy[a] = 0.0f;
     }
 }
 
@@ -36,9 +36,9 @@ void Node::calcAverageStrategy() {
         return;
     }
     for (int a = 0; a < mActionNum; ++a) {
-        mAverageStrategy[a] = 0.0;
+        mAverageStrategy[a] = 0.0f;
     }
-    float normalizingSum = 0.0;
+    float normalizingSum = 0.0f;
     for (int a = 0; a < mActionNum; ++a) {
         normalizingSum += mStrategySum[a];
     }
@@ -46,14 +46,14 @@ void Node::calcAverageStrategy() {
         if (normalizingSum > 0) {
             mAverageStrategy[a] = mStrategySum[a] / normalizingSum;
         } else {
-            mAverageStrategy[a] = 1.0 / (float) mActionNum;
+            mAverageStrategy[a] = 1.0f / (float) mActionNum;
         }
     }
     mAlreadyCalculated = true;
 }
 
 const float *Node::strategy() {
-    float normalizingSum = 0.0;
+    float normalizingSum = 0.0f;
     for (int a = 0; a < mActionNum; ++a) {
         mStrategy[a] = mRegretSum[a] > 0 ? mRegretSum[a] : 0;
         normalizingSum += mStrategy[a];
@@ -62,7 +62,7 @@ const float *Node::strategy() {
         if (normalizingSum > 0) {
             mStrategy[a] /= normalizingSum;
         } else {
-            mStrategy[a] = 1.0 / (float) mActionNum;
+            mStrategy[a] = 1.0f / (float) mActionNum;
         }
     }
     return mStrategy;
