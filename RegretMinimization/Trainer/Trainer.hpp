@@ -29,16 +29,16 @@ public:
 
     void train(const int iterations);
 
-    float CFR(const Kuhn::Game &game, const int playerIndex, const float* ps, const int depth);
+    float CFR(const Kuhn::Game &game, const int playerIndex, const float* ps);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;
 
-    float chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float p0, const float p1, const int depth);
+    float chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float p0, const float p1);
 
-    float externalSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int depth);
+    float externalSamplingCFR(const Kuhn::Game &game, const int playerIndex);
 
-    std::tuple<float, float> outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float p0, const float p1, const float s, const int depth);
+    std::tuple<float, float> outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float p0, const float p1, const float s);
 
     std::mt19937 mEngine;
     std::unordered_map<std::string, Node *> mNodeMap;

@@ -33,13 +33,13 @@ void Trainer::train(const int iterations) {
             mGame->reset();
             if (mModeStr == "cfr") {
                 mGame->resetForCFR();
-                utils[p] = CFR(*mGame, p, ps, 0);
+                utils[p] = CFR(*mGame, p, ps);
             } else if (mModeStr == "chance") {
-                utils[p] = chanceSamplingCFR(*mGame, p, 1, 1, 0);
+                utils[p] = chanceSamplingCFR(*mGame, p, 1, 1);
             } else if (mModeStr == "external") {
-                utils[p] = externalSamplingCFR(*mGame, p, 0);
+                utils[p] = externalSamplingCFR(*mGame, p);
             } else if (mModeStr == "outcome") {
-                utils[p] = std::get<0>(outcomeSamplingCFR(*mGame, p, i, 1, 1, 1, 0));
+                utils[p] = std::get<0>(outcomeSamplingCFR(*mGame, p, i, 1, 1, 1));
             } else {
                 assert(false);
             }
@@ -65,7 +65,7 @@ Trainer::~Trainer() {
     delete mGame;
 }
 
-float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *ps, const int depth) {
+float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *ps) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -86,7 +86,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
             for (int i = 0; i < game_cp.playerNum(); ++i) {
                 pis[i] = playerIndex == i ? ps[i] : chanceProbability * ps[i];
             }
-            nodeUtil += chanceProbability * CFR(game_cp, playerIndex, pis, depth + 1);
+            nodeUtil += chanceProbability * CFR(game_cp, playerIndex, pis);
         }
         return nodeUtil;
     }
@@ -114,7 +114,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
         float pis[game_cp.playerNum()];
         std::memcpy(pis, ps, sizeof(ps[0]) * game_cp.playerNum());
         pis[player] *= strategy[a];
-        const float u = CFR(game_cp, playerIndex, pis, depth + 1);
+        const float u = CFR(game_cp, playerIndex, pis);
         utils[a] = u;
         nodeUtil += strategy[a] * utils[a];
     }
@@ -139,7 +139,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
     return nodeUtil;
 }
 
-float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float p0, const float p1, const int depth) {
+float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float p0, const float p1) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -167,8 +167,8 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
         Kuhn::Game game_cp(game);
         game_cp.step(a);
         const float u = player == 0
-                         ? chanceSamplingCFR(game_cp, playerIndex, p0 * strategy[a], p1, depth + 1)
-                         : chanceSamplingCFR(game_cp, playerIndex, p0, p1 * strategy[a], depth + 1);
+                         ? chanceSamplingCFR(game_cp, playerIndex, p0 * strategy[a], p1)
+                         : chanceSamplingCFR(game_cp, playerIndex, p0, p1 * strategy[a]);
         utils[a] = u;
         nodeUtil += strategy[a] * utils[a];
     }
@@ -187,7 +187,7 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
     return nodeUtil;
 }
 
-float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int depth) {
+float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -213,7 +213,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
         Kuhn::Game game_cp(game);
         std::discrete_distribution<int> dist(strategy, strategy + actionNum);
         game_cp.step(dist(mEngine));
-        const float util = externalSamplingCFR(game_cp, playerIndex, depth + 1);
+        const float util = externalSamplingCFR(game_cp, playerIndex);
         // update average strategy
         node->strategySum(strategy, 1.0f);
         return util;
@@ -225,7 +225,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     for (int a = 0; a < actionNum; ++a) {
         Kuhn::Game game_cp(game);
         game_cp.step(a);
-        utils[a] = externalSamplingCFR(game_cp, playerIndex, depth + 1);
+        utils[a] = externalSamplingCFR(game_cp, playerIndex);
         nodeUtil += strategy[a] * utils[a];
     }
 
@@ -239,7 +239,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     return nodeUtil;
 }
 
-std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float p0, const float p1, const float s, const int depth) {
+std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float p0, const float p1, const float s) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -282,7 +282,7 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
         Kuhn::Game game_cp(game);
         game_cp.step(action);
         std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, p0 * strategy[action], p1,
-                                                            s * probability[action], depth + 1);
+                                                            s * probability[action]);
         util = std::get<0>(ret);
         pTail = std::get<1>(ret);
         const float W = util * p1;
@@ -298,7 +298,7 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
         Kuhn::Game game_cp(game);
         game_cp.step(action);
         std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, p0, p1 * strategy[action],
-                                                            s * probability[action], depth + 1);
+                                                            s * probability[action]);
         util = std::get<0>(ret);
         pTail = std::get<1>(ret);
         // update average strategy
