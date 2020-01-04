@@ -23,7 +23,7 @@ public:
 
     void step(const int action);
 
-    double payoff(const int playerIndex) const;
+    float payoff(const int playerIndex) const;
 
     std::string infoSetStr() const;
 
@@ -31,7 +31,7 @@ public:
 
     int currentPlayer() const;
 
-    double chanceProbability() const;
+    float chanceProbability() const;
 
     int playerNum() const;
 
@@ -40,9 +40,9 @@ public:
 private:
     std::mt19937 &mEngine;
     std::array<int, CardNum> mCards;
-    std::array<double, PlayerNum> mPayoff;
+    std::array<float, PlayerNum> mPayoff;
     int mCurrentPlayer;
-    double mChanceProbability;
+    float mChanceProbability;
     int mFirstBetTurn;
     int mBetPlayerNum;
     int mTurnNum;

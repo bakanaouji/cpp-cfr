@@ -163,7 +163,7 @@ void Game::step(const int action) {
     mCurrentPlayer = player;
 }
 
-double Game::payoff(const int playerIndex) const {
+float Game::payoff(const int playerIndex) const {
     return mPayoff[playerIndex];
 }
 
@@ -183,7 +183,7 @@ int Game::actionNum() const {
     return (int) Action::NUM;
 }
 
-double Game::chanceProbability() const {
+float Game::chanceProbability() const {
     return mChanceProbability;
 }
 
