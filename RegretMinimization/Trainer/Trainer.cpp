@@ -35,7 +35,7 @@ void Trainer::train(const int iterations) {
                 mGame->resetForCFR();
                 utils[p] = CFR(*mGame, p, ps, 0);
             } else if (mModeStr == "chance") {
-                chanceSamplingCFR(*mGame, p, 1, 1, 0);
+                utils[p] = chanceSamplingCFR(*mGame, p, 1, 1, 0);
             } else if (mModeStr == "external") {
                 externalSamplingCFR(*mGame, p, 0);
             } else if (mModeStr == "outcome") {
@@ -142,13 +142,14 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
 
 float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float p0, const float p1, const int depth) {
     ++mNodeTouchedCnt;
+
     // return payoff for terminal states
-    const float payoff = game.payoff(playerIndex);
-    if (!std::isnan(payoff)) {
-        return payoff;
+    if (game.done()) {
+        return game.payoff(playerIndex);
     }
 
     // get information set node or create it if nonexistant
+    const int player = game.currentPlayer();
     const int actionNum = game.actionNum();
     std::string infoSet = game.infoSetStr();
     Node *node = mNodeMap[infoSet];
@@ -157,14 +158,10 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
         mNodeMap[infoSet] = node;
     }
 
-    // for each action, recursively call cfr with additional history and probability
+    // get current strategy through regret-matching
     const float *strategy = node->strategy();
 
-    const int player = game.currentPlayer();
-    if (player == playerIndex) {
-        node->strategySum(strategy, player == 0 ? p0 : p1);
-    }
-
+    // for each action, recursively call cfr with additional history and probability
     float util[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
@@ -184,7 +181,10 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
             const float regretSum = node->regretSum(a) + (player == 0 ? p1 : p0) * regret;
             node->regretSum(a, regretSum);
         }
+        // update average strategy across all training iterations
+        node->strategySum(strategy, player == 0 ? p0 : p1);
     }
+
     return nodeUtil;
 }
 
@@ -302,7 +302,11 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
 void Trainer::writeStrategyToJson(const int iteration) const {
     for (auto &itr : mNodeMap) {
         itr.second->calcAverageStrategy();
-        std::cout << itr.first << ":";
+//        std::cout << itr.first << ":";
+        for (int i = 0; i < itr.first.size(); ++i) {
+            std::cout << int(itr.first[i]);
+        }
+        std::cout << ":";
         for (int i = 0; i < itr.second->actionNum(); ++i) {
             std::cout << itr.second->averageStrategy()[i] << ",";
         }
@@ -310,10 +314,7 @@ void Trainer::writeStrategyToJson(const int iteration) const {
     }
     std::string path = iteration > 0 ? "strategy_" + std::to_string(iteration)
                                      : "strategy";
-    for (int i = 0; i < mGame->playerNum(); ++i) {
-        path += "_" + std::to_string(true);
-    }
-    path += ".bin";
+    path += "_" + mModeStr + ".bin";
     std::ofstream ofs(mFolderPath + "/" + path);
     boost::archive::binary_oarchive oa(ofs);
     oa << mNodeMap;
