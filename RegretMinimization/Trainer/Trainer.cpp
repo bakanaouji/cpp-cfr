@@ -36,7 +36,7 @@ void Trainer::train(const int iterations) {
                 mGame->resetForCFR();
                 utils[p] = CFR(*mGame, p, 1.0f, 1.0f);
             } else if (mModeStr == "chance") {
-                utils[p] = chanceSamplingCFR(*mGame, p, initialPs);
+                utils[p] = chanceSamplingCFR(*mGame, p, 1.0f, 1.0f);
             } else if (mModeStr == "external") {
                 utils[p] = externalSamplingCFR(*mGame, p);
             } else if (mModeStr == "outcome") {
@@ -130,7 +130,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float pi
     return nodeUtil;
 }
 
-float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float *ps) {
+float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float pi, const float po) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -157,28 +157,23 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
     for (int a = 0; a < actionNum; ++a) {
         Kuhn::Game game_cp(game);
         game_cp.step(a);
-        float pis[game_cp.playerNum()];
-        std::memcpy(pis, ps, sizeof(ps[0]) * game_cp.playerNum());
-        pis[player] *= strategy[a];
-        utils[a] = chanceSamplingCFR(game_cp, playerIndex, pis);
+        if (player == playerIndex) {
+            utils[a] = chanceSamplingCFR(game_cp, playerIndex, pi * strategy[a], po);
+        } else {
+            utils[a] = chanceSamplingCFR(game_cp, playerIndex, pi, po * strategy[a]);
+        }
         nodeUtil += strategy[a] * utils[a];
     }
 
     if (player == playerIndex) {
         // for each action, compute and accumulate counterfactual regret
-        float psProd = 1.0f;
-        for (int i = 0; i < game.playerNum(); ++i) {
-            if (i != player) {
-                psProd *= ps[i];
-            }
-        }
         for (int a = 0; a < actionNum; ++a) {
             const float regret = utils[a] - nodeUtil;
-            const float regretSum = node->regretSum(a) + psProd * regret;
+            const float regretSum = node->regretSum(a) + po * regret;
             node->regretSum(a, regretSum);
         }
         // update average strategy across all training iterations
-        node->strategySum(strategy, ps[player]);
+        node->strategySum(strategy, pi);
     }
 
     return nodeUtil;

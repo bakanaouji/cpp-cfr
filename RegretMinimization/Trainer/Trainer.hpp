@@ -34,7 +34,7 @@ public:
 private:
     void writeStrategyToJson(const int iteration = -1) const;
 
-    float chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float* ps);
+    float chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float pi, const float po);
 
     float externalSamplingCFR(const Kuhn::Game &game, const int playerIndex);
 
