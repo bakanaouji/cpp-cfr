@@ -29,7 +29,7 @@ public:
 
     void train(const int iterations);
 
-    float CFR(const Kuhn::Game &game, const int playerIndex, const float* ps);
+    float CFR(const Kuhn::Game &game, const int playerIndex, const float pi, const float po);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;
