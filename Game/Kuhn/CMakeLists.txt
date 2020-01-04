@@ -1,0 +1,1 @@
+add_library(Kuhn SHARED Game.cpp)
