@@ -75,7 +75,6 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
     }
 
     // chance node turn
-    const int player = game.currentPlayer();
     const int actionNum = game.actionNum();
     if (game.isChanceNode()) {
         float nodeUtil = 0.0f;
@@ -106,18 +105,18 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
     const float *strategy = node->strategy();
 
     // for each action, recursively call CFR with additional history and probability
-    float util[actionNum];
+    const int player = game.currentPlayer();
+    float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
         Kuhn::Game game_cp(game);
-        const int action = a;
-        game_cp.step(action);
+        game_cp.step(a);
         float pis[game_cp.playerNum()];
         std::memcpy(pis, ps, sizeof(ps[0]) * game_cp.playerNum());
         pis[player] *= strategy[a];
         const float u = CFR(game_cp, playerIndex, pis, depth + 1);
-        util[a] = u;
-        nodeUtil += strategy[a] * util[a];
+        utils[a] = u;
+        nodeUtil += strategy[a] * utils[a];
     }
 
     if (player == playerIndex) {
@@ -129,7 +128,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
             }
         }
         for (int a = 0; a < actionNum; ++a) {
-            const float regret = util[a] - nodeUtil;
+            const float regret = utils[a] - nodeUtil;
             const float regretSum = node->regretSum(a) + psProd * regret;
             node->regretSum(a, regretSum);
         }
@@ -149,7 +148,6 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
     }
 
     // get information set node or create it if nonexistant
-    const int player = game.currentPlayer();
     const int actionNum = game.actionNum();
     std::string infoSet = game.infoSetStr();
     Node *node = mNodeMap[infoSet];
@@ -162,7 +160,8 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
     const float *strategy = node->strategy();
 
     // for each action, recursively call cfr with additional history and probability
-    float util[actionNum];
+    const int player = game.currentPlayer();
+    float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
         Kuhn::Game game_cp(game);
@@ -170,14 +169,14 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
         const float u = player == 0
                          ? chanceSamplingCFR(game_cp, playerIndex, p0 * strategy[a], p1, depth + 1)
                          : chanceSamplingCFR(game_cp, playerIndex, p0, p1 * strategy[a], depth + 1);
-        util[a] = u;
-        nodeUtil += strategy[a] * util[a];
+        utils[a] = u;
+        nodeUtil += strategy[a] * utils[a];
     }
 
     if (player == playerIndex) {
         // for each action, compute and accumulate counterfactual regret
         for (int a = 0; a < actionNum; ++a) {
-            const float regret = util[a] - nodeUtil;
+            const float regret = utils[a] - nodeUtil;
             const float regretSum = node->regretSum(a) + (player == 0 ? p1 : p0) * regret;
             node->regretSum(a, regretSum);
         }
@@ -197,7 +196,6 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     }
 
     // get information set node or create it if nonexistant
-    const int player = game.currentPlayer();
     const int actionNum = game.actionNum();
     std::string infoSet = game.infoSetStr();
     Node *node = mNodeMap[infoSet];
@@ -210,6 +208,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     const float *strategy = node->strategy();
 
     // if current player is not the target player, sample a single action and recursively call cfr
+    const int player = game.currentPlayer();
     if (player != playerIndex) {
         Kuhn::Game game_cp(game);
         std::discrete_distribution<int> dist(strategy, strategy + actionNum);
@@ -221,18 +220,18 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     }
 
     // for each action, recursively call cfr with additional history and probability
-    float util[actionNum];
+    float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
         Kuhn::Game game_cp(game);
         game_cp.step(a);
-        util[a] = externalSamplingCFR(game_cp, playerIndex, depth + 1);
-        nodeUtil += strategy[a] * util[a];
+        utils[a] = externalSamplingCFR(game_cp, playerIndex, depth + 1);
+        nodeUtil += strategy[a] * utils[a];
     }
 
     // for each action, compute and accumulate counterfactual regret
     for (int a = 0; a < actionNum; ++a) {
-        const float regret = util[a] - nodeUtil;
+        const float regret = utils[a] - nodeUtil;
         const float regretSum = node->regretSum(a) + regret;
         node->regretSum(a, regretSum);
     }
