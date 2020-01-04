@@ -67,6 +67,7 @@ Trainer::~Trainer() {
 
 float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *ps, const int depth) {
     ++mNodeTouchedCnt;
+
     // return payoff for terminal states
     if (game.done()) {
         const float payoff = game.payoff(playerIndex);
@@ -91,6 +92,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
         return nodeUtil;
     }
 
+    // get information set string representation
     std::string infoSet = game.infoSetStr();
 
     // get information set node or create it if nonexistant
@@ -100,13 +102,10 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
         mNodeMap[infoSet] = node;
     }
 
-    // for each action, recursively call cfr with additional history and probability
+    // get current strategy through regret-matching
     const float *strategy = node->strategy();
 
-    if (player == playerIndex) {
-        node->strategySum(strategy, ps[player]);
-    }
-
+    // for each action, recursively call CFR with additional history and probability
     float util[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
@@ -134,7 +133,10 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
             const float regretSum = node->regretSum(a) + psProd * regret;
             node->regretSum(a, regretSum);
         }
+        // update average strategy across all training iterations
+        node->strategySum(strategy, ps[player]);
     }
+
     return nodeUtil;
 }
 
