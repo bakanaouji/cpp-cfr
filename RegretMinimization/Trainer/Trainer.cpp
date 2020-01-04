@@ -22,20 +22,21 @@ Trainer::Trainer(const std::string &mode) : mEngine((std::random_device()())), m
 }
 
 void Trainer::train(const int iterations) {
-    float ps[mGame->playerNum()];
+    float initialPs[mGame->playerNum()];
     for (int i = 0; i < mGame->playerNum(); ++i) {
-        ps[i] = 1.0f;
+        initialPs[i] = 1.0f;
     }
     float utils[mGame->playerNum()];
+
     for (int i = 0; i < iterations; ++i) {
         for (int p = 0; p < 2; ++p) {
             // game reset
             mGame->reset();
             if (mModeStr == "cfr") {
                 mGame->resetForCFR();
-                utils[p] = CFR(*mGame, p, ps);
+                utils[p] = CFR(*mGame, p, initialPs);
             } else if (mModeStr == "chance") {
-                utils[p] = chanceSamplingCFR(*mGame, p, 1, 1);
+                utils[p] = chanceSamplingCFR(*mGame, p, initialPs);
             } else if (mModeStr == "external") {
                 utils[p] = externalSamplingCFR(*mGame, p);
             } else if (mModeStr == "outcome") {
@@ -55,6 +56,7 @@ void Trainer::train(const int iterations) {
             writeStrategyToJson(i);
         }
     }
+
     writeStrategyToJson();
 }
 
@@ -70,8 +72,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
 
     // return payoff for terminal states
     if (game.done()) {
-        const float payoff = game.payoff(playerIndex);
-        return payoff;
+        return game.payoff(playerIndex);
     }
 
     // chance node turn
@@ -114,8 +115,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
         float pis[game_cp.playerNum()];
         std::memcpy(pis, ps, sizeof(ps[0]) * game_cp.playerNum());
         pis[player] *= strategy[a];
-        const float u = CFR(game_cp, playerIndex, pis);
-        utils[a] = u;
+        utils[a] = CFR(game_cp, playerIndex, pis);
         nodeUtil += strategy[a] * utils[a];
     }
 
@@ -139,7 +139,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
     return nodeUtil;
 }
 
-float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float p0, const float p1) {
+float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float *ps) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -166,22 +166,28 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
     for (int a = 0; a < actionNum; ++a) {
         Kuhn::Game game_cp(game);
         game_cp.step(a);
-        const float u = player == 0
-                         ? chanceSamplingCFR(game_cp, playerIndex, p0 * strategy[a], p1)
-                         : chanceSamplingCFR(game_cp, playerIndex, p0, p1 * strategy[a]);
-        utils[a] = u;
+        float pis[game_cp.playerNum()];
+        std::memcpy(pis, ps, sizeof(ps[0]) * game_cp.playerNum());
+        pis[player] *= strategy[a];
+        utils[a] = chanceSamplingCFR(game_cp, playerIndex, pis);
         nodeUtil += strategy[a] * utils[a];
     }
 
     if (player == playerIndex) {
         // for each action, compute and accumulate counterfactual regret
+        float psProd = 1.0f;
+        for (int i = 0; i < game.playerNum(); ++i) {
+            if (i != player) {
+                psProd *= ps[i];
+            }
+        }
         for (int a = 0; a < actionNum; ++a) {
             const float regret = utils[a] - nodeUtil;
-            const float regretSum = node->regretSum(a) + (player == 0 ? p1 : p0) * regret;
+            const float regretSum = node->regretSum(a) + psProd * regret;
             node->regretSum(a, regretSum);
         }
         // update average strategy across all training iterations
-        node->strategySum(strategy, player == 0 ? p0 : p1);
+        node->strategySum(strategy, ps[player]);
     }
 
     return nodeUtil;
