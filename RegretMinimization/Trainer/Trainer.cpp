@@ -282,31 +282,23 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
     std::discrete_distribution<int> dist(probability, probability + actionNum);
     const int action = dist(mEngine);
 
+    // for sampled action, recursively call cfr with additional history and probability
     float util, pTail;
+    Kuhn::Game game_cp(game);
+    game_cp.step(action);
+    std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, p0 * (player == playerIndex ? strategy[action] : 1.0f), p1 * (player == playerIndex ? 1.0f : strategy[action]),
+                                                      s * probability[action]);
+    util = std::get<0>(ret);
+    pTail = std::get<1>(ret);
     if (player == playerIndex) {
-        // for sampled action, recursively call cfr with additional history and probability
-        Kuhn::Game game_cp(game);
-        game_cp.step(action);
-        std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, p0 * strategy[action], p1,
-                                                            s * probability[action]);
-        util = std::get<0>(ret);
-        pTail = std::get<1>(ret);
-        const float W = util * p1;
-
         // for each action, compute and accumulate counterfactual regret
+        const float W = util * p1;
         for (int a = 0; a < actionNum; ++a) {
             const float regret = a == action ? W * (1.0f - strategy[action]) * pTail : -W * pTail * strategy[action];
             const float regretSum = node->regretSum(a) + regret;
             node->regretSum(a, regretSum);
         }
     } else {
-        // for sampled action, recursively call cfr with additional history and probability
-        Kuhn::Game game_cp(game);
-        game_cp.step(action);
-        std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, p0, p1 * strategy[action],
-                                                            s * probability[action]);
-        util = std::get<0>(ret);
-        pTail = std::get<1>(ret);
         // update average strategy
         node->strategySum(strategy, p1 / s);
     }
