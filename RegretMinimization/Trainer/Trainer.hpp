@@ -38,7 +38,7 @@ private:
 
     float externalSamplingCFR(const Kuhn::Game &game, const int playerIndex);
 
-    std::tuple<float, float> outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float p0, const float p1, const float s);
+    std::tuple<float, float> outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float pi, const float po, const float s);
 
     std::mt19937 mEngine;
     std::unordered_map<std::string, Node *> mNodeMap;
