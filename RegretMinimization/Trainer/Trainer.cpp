@@ -39,7 +39,7 @@ void Trainer::train(const int iterations) {
             } else if (mModeStr == "external") {
                 utils[p] = externalSamplingCFR(*mGame, p, 0);
             } else if (mModeStr == "outcome") {
-                outcomeSamplingCFR(*mGame, p, i, 1, 1, 1, 0);
+                utils[p] = std::get<0>(outcomeSamplingCFR(*mGame, p, i, 1, 1, 1, 0));
             } else {
                 assert(false);
             }
@@ -215,7 +215,7 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
         std::discrete_distribution<int> dist(strategy, strategy + actionNum);
         game_cp.step(dist(mEngine));
         const float util = externalSamplingCFR(game_cp, playerIndex, depth + 1);
-        // update average strategy across all training iterations
+        // update average strategy
         node->strategySum(strategy, 1.0f);
         return util;
     }
@@ -242,10 +242,10 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
 
 std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float p0, const float p1, const float s, const int depth) {
     ++mNodeTouchedCnt;
+
     // return payoff for terminal states
-    const float payoff = game.payoff(playerIndex);
-    if (!std::isnan(payoff)) {
-        return std::make_tuple(payoff / s, 1.0f);
+    if (game.done()) {
+        return std::make_tuple(game.payoff(playerIndex) / s, 1.0f);
     }
 
     // get information set node or create it if nonexistant
@@ -257,9 +257,11 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
         mNodeMap[infoSet] = node;
     }
 
-    // for each action, recursively call cfr with additional history and probability
+    // get current strategy through regret-matching
     const float *strategy = node->strategy();
 
+    // if current player is the target player, sample a single action according to epsilon-on-policy
+    // otherwise, sample a single action according to the player's strategy
     const int player = game.currentPlayer();
     const float epsilon = 0.6;
     float probability[actionNum];
@@ -277,6 +279,7 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
 
     float util, pTail;
     if (player == playerIndex) {
+        // for sampled action, recursively call cfr with additional history and probability
         Kuhn::Game game_cp(game);
         game_cp.step(action);
         std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, p0 * strategy[action], p1,
@@ -292,12 +295,14 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
             node->regretSum(a, regretSum);
         }
     } else {
+        // for sampled action, recursively call cfr with additional history and probability
         Kuhn::Game game_cp(game);
         game_cp.step(action);
         std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, p0, p1 * strategy[action],
                                                             s * probability[action], depth + 1);
         util = std::get<0>(ret);
         pTail = std::get<1>(ret);
+        // update average strategy
         node->strategySum(strategy, p1 / s);
     }
     return std::make_tuple(util, pTail * strategy[action]);
