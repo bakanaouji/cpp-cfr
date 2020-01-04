@@ -37,6 +37,8 @@ public:
 
     bool done() const;
 
+    bool isChanceNode() const;
+
 private:
     std::mt19937 &mEngine;
     std::array<int, CardNum> mCards;

@@ -76,7 +76,7 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float *p
     // chance node turn
     const int player = game.currentPlayer();
     const int actionNum = game.actionNum();
-    if (player == game.playerNum() + 1) {
+    if (game.isChanceNode()) {
         float nodeUtil = 0.0f;
         for (int a = 0; a < actionNum; ++a) {
             Kuhn::Game game_cp(game);

@@ -195,4 +195,8 @@ bool Game::done() const {
     return mDone;
 }
 
+bool Game::isChanceNode() const {
+    return mCurrentPlayer == PlayerNum + 1;
+}
+
 } // namespace
