@@ -55,37 +55,50 @@ Trainer<T>::~Trainer() {
 }
 
 template <typename T>
-float Trainer<T>::calculatePayoff(const T &game, const int playerIndex, const std::vector<std::function<const float *(const T &)>> &strategies) {
+std::vector<float> Trainer<T>::calculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
     if (game.done()) {
-        return game.payoff(playerIndex);
+        std::vector<float> payoffs(game.playerNum());
+        for (int i = 0; i < game.playerNum(); ++i) {
+            payoffs[i] = game.payoff(i);
+        }
+        return payoffs;
     }
 
     // chance node turn
     const int actionNum = game.actionNum();
     if (game.isChanceNode()) {
-        float nodeUtil = 0.0f;
-        for (int a = 0; a < actionNum; ++a) {
-            auto game_cp(game);
-            game_cp.step(a);
-            const float chanceProbability = game_cp.chanceProbability();
-            nodeUtil += chanceProbability * calculatePayoff(game_cp, playerIndex, strategies);
+        std::vector<float> nodeUtils(game.playerNum());
+        for (int i = 0; i < game.playerNum(); ++i) {
+            nodeUtils[i] = 0.0f;
         }
-        return nodeUtil;
+        for (int i = 0; i < game.playerNum(); ++i) {
+            for (int a = 0; a < actionNum; ++a) {
+                auto game_cp(game);
+                game_cp.step(a);
+                const float chanceProbability = game_cp.chanceProbability();
+                nodeUtils[i] += chanceProbability * calculatePayoff(game_cp, strategies)[i];
+            }
+        }
+        return nodeUtils;
     }
 
     // for each action, recursively calculate payoff with additional history and probability
     const int player = game.currentPlayer();
-    float nodeUtil = 0;
-    for (int a = 0; a < actionNum; ++a) {
-        auto game_cp(game);
-        game_cp.step(a);
-        nodeUtil += strategies[player](game)[a] * calculatePayoff(game_cp, playerIndex, strategies);
+    std::vector<float> nodeUtils(game.playerNum());
+    for (int i = 0; i < game.playerNum(); ++i) {
+        nodeUtils[i] = 0.0f;
     }
-
-    return nodeUtil;
+    for (int i = 0; i < game.playerNum(); ++i) {
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            nodeUtils[i] += strategies[player](game)[a] * calculatePayoff(game_cp, strategies)[i];
+        }
+    }
+    return nodeUtils;
 }
 
 template <typename T>

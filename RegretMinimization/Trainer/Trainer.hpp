@@ -28,7 +28,7 @@ public:
 
     void train(const int iterations);
 
-    float calculatePayoff(const T &game, const int playerIndex, const std::vector<std::function<const float *(const T &)>> &strategies);
+    std::vector<float> calculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;

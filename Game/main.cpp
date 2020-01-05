@@ -29,11 +29,13 @@ int main() {
 
     // calculate expected payoffs
     Trainer::Trainer<Kuhn::Game> trainer("cfr");
-    for (int p = 0; p < game.playerNum(); ++p) {
-        // game reset
-        game.reset(false);
-        std::cout << trainer.calculatePayoff(game, p, strategies) << std::endl;
+    game.reset(false);
+    std::vector<float> payoffs = trainer.calculatePayoff(game, strategies);
+    std::cout << "expected payoff: (";
+    for (int i = 0; i < game.playerNum(); ++i) {
+        std::cout << payoffs[i] << ",";
     }
+    std::cout << ")" << std::endl;
 
     // finalize
     for (int i = 0; i < strategyPaths.size(); ++i) {
