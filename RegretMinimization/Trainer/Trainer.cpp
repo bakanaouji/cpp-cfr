@@ -24,7 +24,7 @@ Trainer<T>::Trainer(const std::string &mode, const std::vector<std::string> &str
     mUpdate = new bool[mGame->playerNum()];
     for (int i = 0; i < mGame->playerNum(); ++i) {
         if (strategyPaths.size() >= i + 1 && !strategyPaths[i].empty()) {
-            std::cout << strategyPaths[i] << std::endl;
+            std::cout << "load strategy \"" << strategyPaths[i] << "\" as static player " << i << std::endl;
             std::ifstream ifs(strategyPaths[i]);
             boost::archive::binary_iarchive ia(ifs);
             ia >> mFixedStrategies[i];
@@ -139,11 +139,11 @@ void Trainer<T>::train(const int iterations) {
             }
         }
         if (i % 1000 == 0) {
-            std::cout << i << "," << mNodeMap.size() << "," << mNodeTouchedCnt << ",";
+            std::cout << "iteration:" << i << ", cumulative nodes touched: " << mNodeTouchedCnt << ", infosets num: " << mNodeMap.size() << ", expected payoffs: (";
             for (int p = 0; p < mGame->playerNum(); ++p) {
                 std::cout << utils[p] << ",";
             }
-            std::cout << std::endl;
+            std::cout << ")" << std::endl;
         }
         if (i != 0 && i % 10000000 == 0) {
             writeStrategyToJson(i);
