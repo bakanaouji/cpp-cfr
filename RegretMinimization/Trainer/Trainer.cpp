@@ -55,9 +55,7 @@ Trainer<T>::~Trainer() {
 }
 
 template <typename T>
-std::vector<float> Trainer<T>::calculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies) {
-    ++mNodeTouchedCnt;
-
+std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies) {
     // return payoff for terminal states
     if (game.done()) {
         std::vector<float> payoffs(game.playerNum());
@@ -78,7 +76,7 @@ std::vector<float> Trainer<T>::calculatePayoff(const T &game, const std::vector<
             auto game_cp(game);
             game_cp.step(a);
             const float chanceProbability = game_cp.chanceProbability();
-            std::vector<float> utils = calculatePayoff(game_cp, strategies);
+            std::vector<float> utils = CalculatePayoff(game_cp, strategies);
             for (int i = 0; i < game.playerNum(); ++i) {
                 nodeUtils[i] += chanceProbability * utils[i];
             }
@@ -95,7 +93,7 @@ std::vector<float> Trainer<T>::calculatePayoff(const T &game, const std::vector<
     for (int a = 0; a < actionNum; ++a) {
         auto game_cp(game);
         game_cp.step(a);
-        std::vector<float> utils = calculatePayoff(game_cp, strategies);
+        std::vector<float> utils = CalculatePayoff(game_cp, strategies);
         for (int i = 0; i < game.playerNum(); ++i) {
             nodeUtils[i] += strategies[player](game)[a] * utils[i];
         }

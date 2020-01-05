@@ -26,9 +26,9 @@ public:
 
     ~Trainer();
 
-    void train(const int iterations);
+    static std::vector<float> CalculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies);
 
-    std::vector<float> calculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies);
+    void train(const int iterations);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;
