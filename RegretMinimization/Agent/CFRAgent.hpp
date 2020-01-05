@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Kenshi Abe
 //
 
-#ifndef GAME_CFRAGENT_HPP
-#define GAME_CFRAGENT_HPP
+#ifndef REGRETMINIMIZATION_CFRAGENT_HPP
+#define REGRETMINIMIZATION_CFRAGENT_HPP
 
 #include <random>
 #include <string>
@@ -36,4 +36,4 @@ private:
 
 } // namespace
 
-#endif //GAME_CFRAGENT_HPP
+#endif //REGRETMINIMIZATION_CFRAGENT_HPP

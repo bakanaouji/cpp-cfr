@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Kenshi Abe
 //
 
-#ifndef REGRETMINIMIZATION_GAME_HPP
-#define REGRETMINIMIZATION_GAME_HPP
+#ifndef GAME_GAME_HPP
+#define GAME_GAME_HPP
 
 #include <array>
 #include <random>
@@ -55,4 +55,4 @@ private:
 
 } // namespace
 
-#endif //REGRETMINIMIZATION_GAME_HPP
+#endif //GAME_GAME_HPP
