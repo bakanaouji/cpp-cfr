@@ -7,6 +7,7 @@
 
 #include <array>
 #include <random>
+#include <string>
 #include "Constant.hpp"
 
 namespace Kuhn {
@@ -38,6 +39,8 @@ public:
     bool done() const;
 
     bool isChanceNode() const;
+
+    std::string name() const;
 
 private:
     std::mt19937 &mEngine;

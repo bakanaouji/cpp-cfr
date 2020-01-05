@@ -199,4 +199,8 @@ bool Game::isChanceNode() const {
     return mCurrentPlayer == PlayerNum + 1;
 }
 
+std::string Game::name() const {
+    return "kuhn";
+}
+
 } // namespace

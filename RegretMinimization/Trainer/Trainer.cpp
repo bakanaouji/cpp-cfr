@@ -16,9 +16,9 @@ namespace Trainer {
 
 template <typename T>
 Trainer<T>::Trainer(const std::string &mode) : mEngine((std::random_device()())), mNodeTouchedCnt(0), mModeStr(mode) {
-    mFolderPath = "../strategies/kuhn";
-    boost::filesystem::create_directories(mFolderPath);
     mGame = new T(mEngine);
+    mFolderPath = "../strategies/" + mGame->name();
+    boost::filesystem::create_directories(mFolderPath);
 }
 
 template <typename T>
