@@ -124,7 +124,7 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     if (!mUpdate[player]) {
         float nodeUtil = 0.0f;
         for (int a = 0; a < actionNum; ++a) {
-            T game_cp(game);
+            auto game_cp(game);
             game_cp.step(a);
             const float chanceProbability = float(mFixedStrategies[player].at(infoSet)->averageStrategy()[a]);
             nodeUtil += chanceProbability * CFR(game_cp, playerIndex, pi, po * chanceProbability);
@@ -179,9 +179,21 @@ float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const 
         return game.payoff(playerIndex);
     }
 
-    // get information set node or create it if nonexistant
-    const int actionNum = game.actionNum();
+    // get information set string representation
     std::string infoSet = game.infoSetStr();
+
+    // treat static player as chance node
+    const int actionNum = game.actionNum();
+    const int player = game.currentPlayer();
+    if (!mUpdate[player]) {
+        auto game_cp(game);
+        auto strategy = mFixedStrategies[player].at(infoSet)->averageStrategy();
+        std::discrete_distribution<int> dist(strategy, strategy + actionNum);
+        game_cp.step(dist(mEngine));
+        return chanceSamplingCFR(game_cp, playerIndex, pi, po);
+    }
+
+    // get information set node or create it if nonexistant
     Node *node = mNodeMap[infoSet];
     if (node == nullptr) {
         node = new Node(actionNum);
@@ -192,7 +204,6 @@ float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const 
     const float *strategy = node->strategy();
 
     // for each action, recursively call cfr with additional history and probability
-    const int player = game.currentPlayer();
     float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
