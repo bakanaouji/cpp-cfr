@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/serialization/unordered_map.hpp>
@@ -15,10 +16,42 @@
 namespace Trainer {
 
 template <typename T>
-Trainer<T>::Trainer(const std::string &mode) : mEngine((std::random_device()())), mNodeTouchedCnt(0), mModeStr(mode) {
+Trainer<T>::Trainer(const std::string &mode, const std::vector<std::string> &strategyPaths) : mEngine((std::random_device()())), mNodeTouchedCnt(0), mModeStr(mode) {
     mGame = new T(mEngine);
     mFolderPath = "../strategies/" + mGame->name();
     boost::filesystem::create_directories(mFolderPath);
+    mFixedStrategies = new std::unordered_map<std::string, Node *>[mGame->playerNum()];
+    mUpdate = new bool[mGame->playerNum()];
+    for (int i = 0; i < mGame->playerNum(); ++i) {
+        if (strategyPaths.size() >= i + 1 && !strategyPaths[i].empty()) {
+            std::cout << strategyPaths[i] << std::endl;
+            std::ifstream ifs(strategyPaths[i]);
+            boost::archive::binary_iarchive ia(ifs);
+            ia >> mFixedStrategies[i];
+            ifs.close();
+            mUpdate[i] = false;
+        } else {
+            mUpdate[i] = true;
+        }
+    }
+}
+
+template <typename T>
+Trainer<T>::~Trainer() {
+    for (auto &itr : mNodeMap) {
+        delete itr.second;
+    }
+    for (int i = 0; i < mGame->playerNum(); ++i) {
+        if (mUpdate[i]) {
+            continue;
+        }
+        for (auto &itr : mFixedStrategies[i]) {
+            delete itr.second;
+        }
+    }
+    delete[] mFixedStrategies;
+    delete[] mUpdate;
+    delete mGame;
 }
 
 template <typename T>
@@ -26,20 +59,24 @@ void Trainer<T>::train(const int iterations) {
     float utils[mGame->playerNum()];
 
     for (int i = 0; i < iterations; ++i) {
-        for (int p = 0; p < 2; ++p) {
-            // game reset
-            mGame->reset();
+        for (int p = 0; p < mGame->playerNum(); ++p) {
+            if (!mUpdate[p]) {
+                continue;
+            }
             if (mModeStr == "cfr") {
                 mGame->resetForCFR();
                 utils[p] = CFR(*mGame, p, 1.0f, 1.0f);
-            } else if (mModeStr == "chance") {
-                utils[p] = chanceSamplingCFR(*mGame, p, 1.0f, 1.0f);
-            } else if (mModeStr == "external") {
-                utils[p] = externalSamplingCFR(*mGame, p);
-            } else if (mModeStr == "outcome") {
-                utils[p] = std::get<0>(outcomeSamplingCFR(*mGame, p, i, 1.0f, 1.0f, 1.0f));
             } else {
-                assert(false);
+                mGame->reset();
+                if (mModeStr == "chance") {
+                    utils[p] = chanceSamplingCFR(*mGame, p, 1.0f, 1.0f);
+                } else if (mModeStr == "external") {
+                    utils[p] = externalSamplingCFR(*mGame, p);
+                } else if (mModeStr == "outcome") {
+                    utils[p] = std::get<0>(outcomeSamplingCFR(*mGame, p, i, 1.0f, 1.0f, 1.0f));
+                } else {
+                    assert(false);
+                }
             }
         }
         if (i % 1000 == 0) {
@@ -55,14 +92,6 @@ void Trainer<T>::train(const int iterations) {
     }
 
     writeStrategyToJson();
-}
-
-template <typename T>
-Trainer<T>::~Trainer() {
-    for (auto &itr : mNodeMap) {
-        delete itr.second;
-    }
-    delete mGame;
 }
 
 template <typename T>
@@ -90,6 +119,19 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     // get information set string representation
     std::string infoSet = game.infoSetStr();
 
+    // treat static player as chance node
+    const int player = game.currentPlayer();
+    if (!mUpdate[player]) {
+        float nodeUtil = 0.0f;
+        for (int a = 0; a < actionNum; ++a) {
+            T game_cp(game);
+            game_cp.step(a);
+            const float chanceProbability = float(mFixedStrategies[player].at(infoSet)->averageStrategy()[a]);
+            nodeUtil += chanceProbability * CFR(game_cp, playerIndex, pi, po * chanceProbability);
+        }
+        return nodeUtil;
+    }
+
     // get information set node or create it if nonexistant
     Node *node = mNodeMap[infoSet];
     if (node == nullptr) {
@@ -101,7 +143,6 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     const float *strategy = node->strategy();
 
     // for each action, recursively call CFR with additional history and probability
-    const int player = game.currentPlayer();
     float utils[actionNum];
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {

@@ -10,6 +10,7 @@
 #include <random>
 #include <string>
 #include <tuple>
+#include <vector>
 
 namespace Trainer {
 class Node;
@@ -20,7 +21,7 @@ namespace Trainer {
 template <typename T>
 class Trainer {
 public:
-    explicit Trainer(const std::string &mode);
+    explicit Trainer(const std::string &mode, const std::vector<std::string> &strategyPaths = {});
 
     ~Trainer();
 
@@ -43,6 +44,8 @@ private:
     T *mGame;
     std::string mFolderPath;
     const std::string &mModeStr;
+    std::unordered_map<std::string, Node *> *mFixedStrategies;
+    bool *mUpdate;
 };
 
 } // namespace

@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <random>
+#include <string>
+#include <vector>
 #include "CFRAgent.hpp"
 #include "Game.hpp"
 #include "Trainer.hpp"
@@ -13,7 +15,8 @@ int main() {
     std::mt19937 engine((std::random_device()()));
     Kuhn::Game game(engine);
 
-    Trainer::Trainer<Kuhn::Game> trainer("cfr");
+    std::vector<std::string> strategyPaths = {"../strategies/" + game.name() + "/strategy_cfr.bin", "../strategies/" + game.name() + "/strategy_cfr.bin"};
+    Trainer::Trainer<Kuhn::Game> trainer("cfr", strategyPaths);
     float ps[game.playerNum()];
     for (int i = 0; i < game.playerNum(); ++i) {
         ps[i] = 1.0;
