@@ -18,9 +18,7 @@ public:
 
     Game(const Game &obj);
 
-    void reset();
-
-    void resetForCFR();
+    void reset(const bool skipChanceAction = true);
 
     void step(const int action);
 

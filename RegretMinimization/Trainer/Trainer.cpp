@@ -55,6 +55,65 @@ Trainer<T>::~Trainer() {
 }
 
 template <typename T>
+float Trainer<T>::calculatePayoff(const T &game, const int playerIndex) {
+    ++mNodeTouchedCnt;
+
+    // return payoff for terminal states
+    if (game.done()) {
+        return game.payoff(playerIndex);
+    }
+
+    // chance node turn
+    const int actionNum = game.actionNum();
+    if (game.isChanceNode()) {
+        float nodeUtil = 0.0f;
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const float chanceProbability = game_cp.chanceProbability();
+            nodeUtil += chanceProbability * calculatePayoff(game_cp, playerIndex);
+        }
+        return nodeUtil;
+    }
+
+    // get information set string representation
+    std::string infoSet = game.infoSetStr();
+
+    // treat static player as chance node
+    const int player = game.currentPlayer();
+    if (!mUpdate[player]) {
+        float nodeUtil = 0.0f;
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const float chanceProbability = float(mFixedStrategies[player].at(infoSet)->averageStrategy()[a]);
+            nodeUtil += chanceProbability * calculatePayoff(game_cp, playerIndex);
+        }
+        return nodeUtil;
+    }
+
+    // get information set node or create it if nonexistant
+    Node *node = mNodeMap[infoSet];
+    if (node == nullptr) {
+        node = new Node(actionNum);
+        mNodeMap[infoSet] = node;
+    }
+
+    // get current strategy through regret-matching
+    const float *strategy = node->strategy();
+
+    // for each action, recursively calculate payoff with additional history and probability
+    float nodeUtil = 0;
+    for (int a = 0; a < actionNum; ++a) {
+        auto game_cp(game);
+        game_cp.step(a);
+        nodeUtil += strategy[a] * calculatePayoff(game_cp, playerIndex);
+    }
+
+    return nodeUtil;
+}
+
+template <typename T>
 void Trainer<T>::train(const int iterations) {
     float utils[mGame->playerNum()];
 
@@ -64,7 +123,7 @@ void Trainer<T>::train(const int iterations) {
                 continue;
             }
             if (mModeStr == "cfr") {
-                mGame->resetForCFR();
+                mGame->reset(false);
                 utils[p] = CFR(*mGame, p, 1.0f, 1.0f);
             } else {
                 mGame->reset();

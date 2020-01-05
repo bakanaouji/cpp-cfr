@@ -25,7 +25,12 @@ Game::Game(const Game &obj) : mEngine(obj.mEngine), mCards(obj.mCards), mPayoff(
     }
 }
 
-void Game::reset() {
+void Game::reset(bool skipChanceAction) {
+    if (!skipChanceAction) {
+        mCurrentPlayer = PlayerNum + 1;
+        return;
+    }
+
     for (int i = 0; i < CardNum; ++i) {
         mCards[i] = i;
     }
@@ -44,10 +49,6 @@ void Game::reset() {
     mFirstBetTurn = -1;
     mBetPlayerNum = 0;
     mDone = false;
-}
-
-void Game::resetForCFR() {
-    mCurrentPlayer = PlayerNum + 1;
 }
 
 void Game::step(const int action) {

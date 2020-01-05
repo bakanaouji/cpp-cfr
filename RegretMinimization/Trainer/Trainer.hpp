@@ -27,10 +27,12 @@ public:
 
     void train(const int iterations);
 
-    float CFR(const T &game, const int playerIndex, const float pi, const float po);
+    float calculatePayoff(const T &game, const int playerIndex);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;
+
+    float CFR(const T &game, const int playerIndex, const float pi, const float po);
 
     float chanceSamplingCFR(const T &game, const int playerIndex, const float pi, const float po);
 
