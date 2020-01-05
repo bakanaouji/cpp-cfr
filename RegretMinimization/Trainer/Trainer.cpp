@@ -74,12 +74,13 @@ std::vector<float> Trainer<T>::calculatePayoff(const T &game, const std::vector<
         for (int i = 0; i < game.playerNum(); ++i) {
             nodeUtils[i] = 0.0f;
         }
-        for (int i = 0; i < game.playerNum(); ++i) {
-            for (int a = 0; a < actionNum; ++a) {
-                auto game_cp(game);
-                game_cp.step(a);
-                const float chanceProbability = game_cp.chanceProbability();
-                nodeUtils[i] += chanceProbability * calculatePayoff(game_cp, strategies)[i];
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const float chanceProbability = game_cp.chanceProbability();
+            std::vector<float> utils = calculatePayoff(game_cp, strategies);
+            for (int i = 0; i < game.playerNum(); ++i) {
+                nodeUtils[i] += chanceProbability * utils[i];
             }
         }
         return nodeUtils;
@@ -91,11 +92,12 @@ std::vector<float> Trainer<T>::calculatePayoff(const T &game, const std::vector<
     for (int i = 0; i < game.playerNum(); ++i) {
         nodeUtils[i] = 0.0f;
     }
-    for (int i = 0; i < game.playerNum(); ++i) {
-        for (int a = 0; a < actionNum; ++a) {
-            auto game_cp(game);
-            game_cp.step(a);
-            nodeUtils[i] += strategies[player](game)[a] * calculatePayoff(game_cp, strategies)[i];
+    for (int a = 0; a < actionNum; ++a) {
+        auto game_cp(game);
+        game_cp.step(a);
+        std::vector<float> utils = calculatePayoff(game_cp, strategies);
+        for (int i = 0; i < game.playerNum(); ++i) {
+            nodeUtils[i] += strategies[player](game)[a] * utils[i];
         }
     }
     return nodeUtils;
