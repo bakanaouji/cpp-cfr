@@ -55,7 +55,7 @@ Trainer<T>::~Trainer() {
 }
 
 template <typename T>
-float Trainer<T>::calculatePayoff(const T &game, const int playerIndex) {
+float Trainer<T>::calculatePayoff(const T &game, const int playerIndex, const std::vector<std::function<const float *(const T &)>> &strategies) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -71,43 +71,18 @@ float Trainer<T>::calculatePayoff(const T &game, const int playerIndex) {
             auto game_cp(game);
             game_cp.step(a);
             const float chanceProbability = game_cp.chanceProbability();
-            nodeUtil += chanceProbability * calculatePayoff(game_cp, playerIndex);
+            nodeUtil += chanceProbability * calculatePayoff(game_cp, playerIndex, strategies);
         }
         return nodeUtil;
     }
-
-    // get information set string representation
-    std::string infoSet = game.infoSetStr();
-
-    // treat static player as chance node
-    const int player = game.currentPlayer();
-    if (!mUpdate[player]) {
-        float nodeUtil = 0.0f;
-        for (int a = 0; a < actionNum; ++a) {
-            auto game_cp(game);
-            game_cp.step(a);
-            const float chanceProbability = float(mFixedStrategies[player].at(infoSet)->averageStrategy()[a]);
-            nodeUtil += chanceProbability * calculatePayoff(game_cp, playerIndex);
-        }
-        return nodeUtil;
-    }
-
-    // get information set node or create it if nonexistant
-    Node *node = mNodeMap[infoSet];
-    if (node == nullptr) {
-        node = new Node(actionNum);
-        mNodeMap[infoSet] = node;
-    }
-
-    // get current strategy through regret-matching
-    const float *strategy = node->strategy();
 
     // for each action, recursively calculate payoff with additional history and probability
+    const int player = game.currentPlayer();
     float nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
         auto game_cp(game);
         game_cp.step(a);
-        nodeUtil += strategy[a] * calculatePayoff(game_cp, playerIndex);
+        nodeUtil += strategies[player](game)[a] * calculatePayoff(game_cp, playerIndex, strategies);
     }
 
     return nodeUtil;

@@ -28,6 +28,9 @@ public:
     /// 行動を決定
     int action(const Kuhn::Game &game) const;
 
+    /// get probability of choosing each action
+    const float *strategy(const Kuhn::Game &game) const;
+
 private:
     /// 乱数生成器
     std::mt19937 &mEngine;

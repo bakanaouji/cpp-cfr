@@ -6,10 +6,11 @@
 #define REGRETMINIMIZATION_TRAINER_HPP
 
 #include <array>
-#include <unordered_map>
+#include <functional>
 #include <random>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 namespace Trainer {
@@ -27,7 +28,7 @@ public:
 
     void train(const int iterations);
 
-    float calculatePayoff(const T &game, const int playerIndex);
+    float calculatePayoff(const T &game, const int playerIndex, const std::vector<std::function<const float *(const T &)>> &strategies);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;

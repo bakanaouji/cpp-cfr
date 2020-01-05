@@ -38,4 +38,9 @@ int CFRAgent::action(const Kuhn::Game &game) const {
     return dist(mEngine);
 }
 
+/// get probability of choosing each action
+const float *CFRAgent::strategy(const Kuhn::Game &game) const {
+    return mStrategy.at(game.infoSetStr())->averageStrategy();
+}
+
 } // namespace
