@@ -1,5 +1,5 @@
 //
-// Created by 阿部 拳之 on 2019/10/25.
+// Copyright (c) 2020 Kenshi Abe
 //
 
 #ifndef REGRETMINIMIZATION_CONSTANT_HPP

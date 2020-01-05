@@ -1,5 +1,5 @@
 //
-// Created by 阿部 拳之 on 2019/10/29.
+// Copyright (c) 2020 Kenshi Abe
 //
 
 #include <functional>

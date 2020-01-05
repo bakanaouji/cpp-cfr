@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2020 Kenshi Abe
+//
+
 #include "Trainer.hpp"
 #include "Trainer.cpp"
 #include "Game.hpp"
