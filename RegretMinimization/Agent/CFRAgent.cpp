@@ -8,12 +8,12 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/unordered_map.hpp>
-#include "Game.hpp"
 
 namespace Agent {
 
 /// コンストラクタ
-CFRAgent::CFRAgent(std::mt19937 &engine, const std::string &path) : mEngine(engine) {
+template <typename T>
+CFRAgent<T>::CFRAgent(std::mt19937 &engine, const std::string &path) : mEngine(engine) {
     std::ifstream ifs(path);
     boost::archive::binary_iarchive ia(ifs);
     ia >> mStrategy;
@@ -21,14 +21,16 @@ CFRAgent::CFRAgent(std::mt19937 &engine, const std::string &path) : mEngine(engi
 }
 
 /// デストラクタ
-CFRAgent::~CFRAgent() {
+template <typename T>
+CFRAgent<T>::~CFRAgent() {
     for (auto &itr : mStrategy) {
         delete itr.second;
     }
 }
 
 /// 行動を決定
-int CFRAgent::action(const Kuhn::Game &game) const {
+template <typename T>
+int CFRAgent<T>::action(const T &game) const {
     if (game.actionNum() == 1) {
         return 0;
     }
@@ -39,7 +41,8 @@ int CFRAgent::action(const Kuhn::Game &game) const {
 }
 
 /// get probability of choosing each action
-const float *CFRAgent::strategy(const Kuhn::Game &game) const {
+template <typename T>
+const float *CFRAgent<T>::strategy(const T &game) const {
     return mStrategy.at(game.infoSetStr())->averageStrategy();
 }
 

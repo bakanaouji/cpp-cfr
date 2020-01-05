@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "CFRAgent.hpp"
+#include "CFRAgent.cpp"
 #include "Game.hpp"
 #include "Trainer.hpp"
 #include "Trainer.cpp"
@@ -22,11 +23,11 @@ int main() {
     // initialize strategies
     std::vector<std::string> strategyPaths = {"../strategies/" + game.name() + "/strategy_cfr.bin",
                                               "../strategies/" + game.name() + "/strategy_cfr.bin"};
-    std::vector<Agent::CFRAgent *> cfragents(strategyPaths.size());
+    std::vector<Agent::CFRAgent<GAME> *> cfragents(strategyPaths.size());
     std::vector<std::function<const float *(const GAME &)>> strategies(strategyPaths.size());
     for (int i = 0; i < strategyPaths.size(); ++i) {
-        cfragents[i] = new Agent::CFRAgent(engine, strategyPaths[i]);
-        const Agent::CFRAgent &agent = *cfragents[i];
+        cfragents[i] = new Agent::CFRAgent<GAME>(engine, strategyPaths[i]);
+        const Agent::CFRAgent<GAME> &agent = *cfragents[i];
         strategies[i] = [&agent](const GAME &game) { return agent.strategy(game); };
     }
 

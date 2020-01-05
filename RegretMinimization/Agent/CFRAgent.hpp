@@ -10,13 +10,10 @@
 #include <unordered_map>
 #include "Node.hpp"
 
-namespace Kuhn {
-class Game;
-}
-
 namespace Agent {
 
 /// CFRエージェント
+template <typename T>
 class CFRAgent {
 public:
     /// コンストラクタ
@@ -26,10 +23,10 @@ public:
     ~CFRAgent();
 
     /// 行動を決定
-    int action(const Kuhn::Game &game) const;
+    int action(const T &game) const;
 
     /// get probability of choosing each action
-    const float *strategy(const Kuhn::Game &game) const;
+    const float *strategy(const T &game) const;
 
 private:
     /// 乱数生成器
