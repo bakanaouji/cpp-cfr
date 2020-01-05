@@ -298,9 +298,15 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
         return std::make_tuple(game.payoff(playerIndex) / s, 1.0f);
     }
 
-    // get information set node or create it if nonexistant
-    const int actionNum = game.actionNum();
+    // get information set string representation
     std::string infoSet = game.infoSetStr();
+
+    // outcome sampling with stochastically-weighted averaging cannot treat static player
+    const int actionNum = game.actionNum();
+    const int player = game.currentPlayer();
+    assert(mUpdate[player] && "Outcome sampling with stochastically-weighted averaging cannot treat static player.");
+
+    // get information set node or create it if nonexistant
     Node *node = mNodeMap[infoSet];
     if (node == nullptr) {
         node = new Node(actionNum);
@@ -312,7 +318,6 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
 
     // if current player is the target player, sample a single action according to epsilon-on-policy
     // otherwise, sample a single action according to the player's strategy
-    const int player = game.currentPlayer();
     const float epsilon = 0.6;
     float probability[actionNum];
     if (player == playerIndex) {
