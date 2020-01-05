@@ -240,9 +240,15 @@ float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
         return game.payoff(playerIndex);
     }
 
-    // get information set node or create it if nonexistant
-    const int actionNum = game.actionNum();
+    // get information set string representation
     std::string infoSet = game.infoSetStr();
+
+    // external sampling with stochastically-weighted averaging cannot treat static player
+    const int actionNum = game.actionNum();
+    const int player = game.currentPlayer();
+    assert(mUpdate[player] && "External sampling with stochastically-weighted averaging cannot treat static player.");
+
+    // get information set node or create it if nonexistant
     Node *node = mNodeMap[infoSet];
     if (node == nullptr) {
         node = new Node(actionNum);
@@ -253,7 +259,6 @@ float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
     const float *strategy = node->strategy();
 
     // if current player is not the target player, sample a single action and recursively call cfr
-    const int player = game.currentPlayer();
     if (player != playerIndex) {
         auto game_cp(game);
         std::discrete_distribution<int> dist(strategy, strategy + actionNum);
