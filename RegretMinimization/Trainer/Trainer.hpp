@@ -11,16 +11,13 @@
 #include <string>
 #include <tuple>
 
-namespace Kuhn {
-class Game;
-}
-
 namespace Trainer {
 class Node;
 }
 
 namespace Trainer {
 
+template <typename T>
 class Trainer {
 public:
     explicit Trainer(const std::string &mode);
@@ -29,21 +26,21 @@ public:
 
     void train(const int iterations);
 
-    float CFR(const Kuhn::Game &game, const int playerIndex, const float pi, const float po);
+    float CFR(const T &game, const int playerIndex, const float pi, const float po);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;
 
-    float chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float pi, const float po);
+    float chanceSamplingCFR(const T &game, const int playerIndex, const float pi, const float po);
 
-    float externalSamplingCFR(const Kuhn::Game &game, const int playerIndex);
+    float externalSamplingCFR(const T &game, const int playerIndex);
 
-    std::tuple<float, float> outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float pi, const float po, const float s);
+    std::tuple<float, float> outcomeSamplingCFR(const T &game, const int playerIndex, const int iteration , const float pi, const float po, const float s);
 
     std::mt19937 mEngine;
     std::unordered_map<std::string, Node *> mNodeMap;
     uint64_t mNodeTouchedCnt;
-    Kuhn::Game *mGame;
+    T *mGame;
     std::string mFolderPath;
     const std::string &mModeStr;
 };

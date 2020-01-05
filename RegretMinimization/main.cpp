@@ -1,6 +1,8 @@
 #include "Trainer.hpp"
+#include "Trainer.cpp"
+#include "Game.hpp"
 
 int main() {
-    Trainer::Trainer trainer("cfr");
+    Trainer::Trainer<Kuhn::Game> trainer("cfr");
     trainer.train(1000000);
 }

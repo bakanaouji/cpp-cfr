@@ -10,18 +10,19 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/serialization/unordered_map.hpp>
-#include "Game.hpp"
 #include "Node.hpp"
 
 namespace Trainer {
 
-Trainer::Trainer(const std::string &mode) : mEngine((std::random_device()())), mNodeTouchedCnt(0), mModeStr(mode) {
+template <typename T>
+Trainer<T>::Trainer(const std::string &mode) : mEngine((std::random_device()())), mNodeTouchedCnt(0), mModeStr(mode) {
     mFolderPath = "../strategies/kuhn";
     boost::filesystem::create_directories(mFolderPath);
-    mGame = new Kuhn::Game(mEngine);
+    mGame = new T(mEngine);
 }
 
-void Trainer::train(const int iterations) {
+template <typename T>
+void Trainer<T>::train(const int iterations) {
     float utils[mGame->playerNum()];
 
     for (int i = 0; i < iterations; ++i) {
@@ -56,14 +57,16 @@ void Trainer::train(const int iterations) {
     writeStrategyToJson();
 }
 
-Trainer::~Trainer() {
+template <typename T>
+Trainer<T>::~Trainer() {
     for (auto &itr : mNodeMap) {
         delete itr.second;
     }
     delete mGame;
 }
 
-float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float pi, const float po) {
+template <typename T>
+float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, const float po) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -126,7 +129,8 @@ float Trainer::CFR(const Kuhn::Game &game, const int playerIndex, const float pi
     return nodeUtil;
 }
 
-float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float pi, const float po) {
+template <typename T>
+float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const float pi, const float po) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -175,7 +179,8 @@ float Trainer::chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, 
     return nodeUtil;
 }
 
-float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex) {
+template <typename T>
+float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -227,7 +232,8 @@ float Trainer::externalSamplingCFR(const Kuhn::Game &game, const int playerIndex
     return nodeUtil;
 }
 
-std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float pi, const float po, const float s) {
+template <typename T>
+std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int playerIndex, const int iteration , const float pi, const float po, const float s) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -288,7 +294,8 @@ std::tuple<float, float> Trainer::outcomeSamplingCFR(const Kuhn::Game &game, con
     return std::make_tuple(util, pTail * strategy[action]);
 }
 
-void Trainer::writeStrategyToJson(const int iteration) const {
+template <typename T>
+void Trainer<T>::writeStrategyToJson(const int iteration) const {
     for (auto &itr : mNodeMap) {
         itr.second->calcAverageStrategy();
 //        std::cout << itr.first << ":";
