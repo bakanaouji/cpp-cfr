@@ -25,7 +25,7 @@ $ sh build.sh
 Next, execute the following commands to run an experiment:
 
 ```bash
-$ ./build/RegretMinimization --iteration=1000000 
+$ ./build/cpp_cfr --iteration=1000000 
 ```
 
 This command requires an argument that specifies the number of iterations of CFR.
@@ -44,7 +44,7 @@ If you have finished computing an approximate Nash equilibrium, you can compute 
 ```bash
 $ cd Game
 $ sh build.sh
-$ ./build/Game --strategy-path-0="../strategies/kuhn/strategy_cfr.bin" --strategy-path-1="../strategies/kuhn/strategy_cfr.bin"
+$ ./build/game --strategy-path-0="../strategies/kuhn/strategy_cfr.bin" --strategy-path-1="../strategies/kuhn/strategy_cfr.bin"
 ```
 
 This command requires arguments that the paths to the binary files that represent the average strategies for players.
