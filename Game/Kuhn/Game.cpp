@@ -1,5 +1,5 @@
 //
-// Created by 阿部 拳之 on 2019-08-05.
+// Copyright (c) 2020 Kenshi Abe
 //
 
 #include "Game.hpp"
@@ -10,7 +10,7 @@
 
 namespace Kuhn {
 
-Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1), mChanceProbability(0.0), mFirstBetTurn(-1), mBetPlayerNum(0), mTurnNum(0), mDone(false) {
+Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1), mChanceProbability(0.0f), mFirstBetTurn(-1), mBetPlayerNum(0), mTurnNum(0), mDone(false) {
     for (auto & infoSet : mInfoSets) {
         for (uint8_t & i : infoSet) {
             i = 0;
@@ -25,7 +25,12 @@ Game::Game(const Game &obj) : mEngine(obj.mEngine), mCards(obj.mCards), mPayoff(
     }
 }
 
-void Game::reset() {
+void Game::reset(bool skipChanceAction) {
+    if (!skipChanceAction) {
+        mCurrentPlayer = PlayerNum + 1;
+        return;
+    }
+
     for (int i = 0; i < CardNum; ++i) {
         mCards[i] = i;
     }
@@ -46,15 +51,11 @@ void Game::reset() {
     mDone = false;
 }
 
-void Game::resetForCFR() {
-    mCurrentPlayer = PlayerNum + 1;
-}
-
 void Game::step(const int action) {
     // chance node action
     if (mCurrentPlayer == PlayerNum + 1) {
         constexpr int ChanceAN = ChanceActionNum();
-        mChanceProbability = 1.0 / float(ChanceAN);
+        mChanceProbability = 1.0f / float(ChanceAN);
         for (int i = 0; i < CardNum; ++i) {
             mCards[i] = i;
         }
@@ -163,7 +164,7 @@ void Game::step(const int action) {
     mCurrentPlayer = player;
 }
 
-double Game::payoff(const int playerIndex) const {
+float Game::payoff(const int playerIndex) const {
     return mPayoff[playerIndex];
 }
 
@@ -183,7 +184,7 @@ int Game::actionNum() const {
     return (int) Action::NUM;
 }
 
-double Game::chanceProbability() const {
+float Game::chanceProbability() const {
     return mChanceProbability;
 }
 
@@ -193,6 +194,14 @@ int Game::currentPlayer() const {
 
 bool Game::done() const {
     return mDone;
+}
+
+bool Game::isChanceNode() const {
+    return mCurrentPlayer == PlayerNum + 1;
+}
+
+std::string Game::name() const {
+    return "kuhn";
 }
 
 } // namespace

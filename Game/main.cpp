@@ -1,26 +1,47 @@
 //
-// Created by 阿部 拳之 on 2019/10/29.
+// Copyright (c) 2020 Kenshi Abe
 //
 
-#include <array>
+#include <functional>
 #include <iostream>
 #include <random>
+#include <string>
+#include <vector>
 #include "CFRAgent.hpp"
+#include "CFRAgent.cpp"
 #include "Game.hpp"
 #include "Trainer.hpp"
+#include "Trainer.cpp"
+
+// Specify game class here
+#define GAME Kuhn::Game
 
 int main() {
     std::mt19937 engine((std::random_device()()));
-    Kuhn::Game game(engine);
+    GAME game(engine);
 
-    Trainer::Trainer trainer("cfr");
-    float ps[game.playerNum()];
-    for (int i = 0; i < game.playerNum(); ++i) {
-        ps[i] = 1.0;
+    // initialize strategies
+    std::vector<std::string> strategyPaths = {"../strategies/" + game.name() + "/strategy_cfr.bin",
+                                              "../strategies/" + game.name() + "/strategy_cfr.bin"};
+    std::vector<Agent::CFRAgent<GAME> *> cfragents(strategyPaths.size());
+    std::vector<std::function<const float *(const GAME &)>> strategies(strategyPaths.size());
+    for (int i = 0; i < strategyPaths.size(); ++i) {
+        cfragents[i] = new Agent::CFRAgent<GAME>(engine, strategyPaths[i]);
+        const Agent::CFRAgent<GAME> &agent = *cfragents[i];
+        strategies[i] = [&agent](const GAME &game) { return agent.strategy(game); };
     }
-    for (int p = 0; p < game.playerNum(); ++p) {
-        // game reset
-        game.resetForCFR();
-        std::cout << trainer.CFR(game, p, ps, 0) << std::endl;
+
+    // calculate expected payoffs
+    game.reset(false);
+    std::vector<float> payoffs = Trainer::Trainer<GAME>::CalculatePayoff(game, strategies);
+    std::cout << "expected payoffs: (";
+    for (int i = 0; i < game.playerNum(); ++i) {
+        std::cout << payoffs[i] << ",";
+    }
+    std::cout << ")" << std::endl;
+
+    // finalize
+    for (int i = 0; i < strategyPaths.size(); ++i) {
+        delete cfragents[i];
     }
 }

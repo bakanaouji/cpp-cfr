@@ -1,13 +1,11 @@
 //
-// Created by 阿部 拳之 on 2019-08-05.
+// Copyright (c) 2020 Kenshi Abe
 //
 
 #ifndef REGRETMINIMIZATION_NODE_HPP
 #define REGRETMINIMIZATION_NODE_HPP
 
-#include <string>
 #include <vector>
-#include <iostream>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/vector.hpp>

@@ -1,19 +1,16 @@
 //
-// Created by 阿部 拳之 on 2019-08-05.
+// Copyright (c) 2020 Kenshi Abe
 //
 
 #ifndef REGRETMINIMIZATION_TRAINER_HPP
 #define REGRETMINIMIZATION_TRAINER_HPP
 
-#include <array>
-#include <unordered_map>
+#include <functional>
 #include <random>
 #include <string>
 #include <tuple>
-
-namespace Kuhn {
-class Game;
-}
+#include <unordered_map>
+#include <vector>
 
 namespace Trainer {
 class Node;
@@ -21,31 +18,36 @@ class Node;
 
 namespace Trainer {
 
+template <typename T>
 class Trainer {
 public:
-    explicit Trainer(const std::string &mode);
+    explicit Trainer(const std::string &mode, const std::vector<std::string> &strategyPaths = {});
 
     ~Trainer();
 
-    void train(const int iterations);
+    static std::vector<float> CalculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies);
 
-    float CFR(const Kuhn::Game &game, const int playerIndex, const float* ps, const int depth);
+    void train(const int iterations);
 
 private:
     void writeStrategyToJson(const int iteration = -1) const;
 
-    float chanceSamplingCFR(const Kuhn::Game &game, const int playerIndex, const float p0, const float p1, const int depth);
+    float CFR(const T &game, const int playerIndex, const float pi, const float po);
 
-    float externalSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int depth);
+    float chanceSamplingCFR(const T &game, const int playerIndex, const float pi, const float po);
 
-    std::tuple<float, float> outcomeSamplingCFR(const Kuhn::Game &game, const int playerIndex, const int iteration , const float p0, const float p1, const float s, const int depth);
+    float externalSamplingCFR(const T &game, const int playerIndex);
+
+    std::tuple<float, float> outcomeSamplingCFR(const T &game, const int playerIndex, const int iteration , const float pi, const float po, const float s);
 
     std::mt19937 mEngine;
     std::unordered_map<std::string, Node *> mNodeMap;
     uint64_t mNodeTouchedCnt;
-    Kuhn::Game *mGame;
+    T *mGame;
     std::string mFolderPath;
     const std::string &mModeStr;
+    std::unordered_map<std::string, Node *> *mFixedStrategies;
+    bool *mUpdate;
 };
 
 } // namespace

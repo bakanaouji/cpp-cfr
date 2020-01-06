@@ -1,9 +1,9 @@
 //
-// Created by 阿部 拳之 on 2019-08-05.
+// Copyright (c) 2020 Kenshi Abe
 //
 
-#ifndef REGRETMINIMIZATION_KUHN_HPP
-#define REGRETMINIMIZATION_KUHN_HPP
+#ifndef GAME_KUHN_HPP
+#define GAME_KUHN_HPP
 
 namespace Kuhn {
 
@@ -16,4 +16,4 @@ enum class Action : int {
 
 } // namespace
 
-#endif //REGRETMINIMIZATION_KUHN_HPP
+#endif //GAME_KUHN_HPP

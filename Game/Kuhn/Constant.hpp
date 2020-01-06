@@ -1,9 +1,9 @@
 //
-// Created by 阿部 拳之 on 2019/10/25.
+// Copyright (c) 2020 Kenshi Abe
 //
 
-#ifndef REGRETMINIMIZATION_CONSTANT_HPP
-#define REGRETMINIMIZATION_CONSTANT_HPP
+#ifndef GAME_CONSTANT_HPP
+#define GAME_CONSTANT_HPP
 
 namespace Kuhn {
 
@@ -19,4 +19,4 @@ static constexpr int ChanceActionNum() {
 
 }
 
-#endif //REGRETMINIMIZATION_CONSTANT_HPP
+#endif //GAME_CONSTANT_HPP

@@ -1,12 +1,13 @@
 //
-// Created by 阿部 拳之 on 2019-08-05.
+// Copyright (c) 2020 Kenshi Abe
 //
 
-#ifndef REGRETMINIMIZATION_GAME_HPP
-#define REGRETMINIMIZATION_GAME_HPP
+#ifndef GAME_GAME_HPP
+#define GAME_GAME_HPP
 
 #include <array>
 #include <random>
+#include <string>
 #include "Constant.hpp"
 
 namespace Kuhn {
@@ -17,13 +18,11 @@ public:
 
     Game(const Game &obj);
 
-    void reset();
-
-    void resetForCFR();
+    void reset(const bool skipChanceAction = true);
 
     void step(const int action);
 
-    double payoff(const int playerIndex) const;
+    float payoff(const int playerIndex) const;
 
     std::string infoSetStr() const;
 
@@ -31,18 +30,22 @@ public:
 
     int currentPlayer() const;
 
-    double chanceProbability() const;
+    float chanceProbability() const;
 
     int playerNum() const;
 
     bool done() const;
 
+    bool isChanceNode() const;
+
+    std::string name() const;
+
 private:
     std::mt19937 &mEngine;
     std::array<int, CardNum> mCards;
-    std::array<double, PlayerNum> mPayoff;
+    std::array<float, PlayerNum> mPayoff;
     int mCurrentPlayer;
-    double mChanceProbability;
+    float mChanceProbability;
     int mFirstBetTurn;
     int mBetPlayerNum;
     int mTurnNum;
@@ -52,4 +55,4 @@ private:
 
 } // namespace
 
-#endif //REGRETMINIMIZATION_GAME_HPP
+#endif //GAME_GAME_HPP
