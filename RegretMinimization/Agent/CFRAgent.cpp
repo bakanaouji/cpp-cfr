@@ -11,7 +11,7 @@
 
 namespace Agent {
 
-/// コンストラクタ
+/// constructor
 template <typename T>
 CFRAgent<T>::CFRAgent(std::mt19937 &engine, const std::string &path) : mEngine(engine) {
     std::ifstream ifs(path);
@@ -20,7 +20,7 @@ CFRAgent<T>::CFRAgent(std::mt19937 &engine, const std::string &path) : mEngine(e
     ifs.close();
 }
 
-/// デストラクタ
+/// destructor
 template <typename T>
 CFRAgent<T>::~CFRAgent() {
     for (auto &itr : mStrategy) {
@@ -28,7 +28,7 @@ CFRAgent<T>::~CFRAgent() {
     }
 }
 
-/// 行動を決定
+/// choose action
 template <typename T>
 int CFRAgent<T>::action(const T &game) const {
     if (game.actionNum() == 1) {

@@ -27,10 +27,12 @@ Node::~Node() {
 }
 
 void Node::calcAverageStrategy() {
-    // すでに計算済みであればスキップ
+    // if average strategy has already been calculated, do nothing to reduce the calculation time
     if (mAlreadyCalculated) {
         return;
     }
+
+    // calculate average strategy
     for (int a = 0; a < mActionNum; ++a) {
         mAverageStrategy[a] = 0.0f;
     }

@@ -12,24 +12,23 @@
 
 namespace Agent {
 
-/// CFRエージェント
+/// Agent that acts according to average strategy obtained by CFR
 template <typename T>
 class CFRAgent {
 public:
-    /// コンストラクタ
+    /// constructor
     explicit CFRAgent(std::mt19937 &engine, const std::string &path);
 
-    /// デストラクタ
+    /// destructor
     ~CFRAgent();
 
-    /// 行動を決定
+    /// choose action
     int action(const T &game) const;
 
     /// get probability of choosing each action
     const float *strategy(const T &game) const;
 
 private:
-    /// 乱数生成器
     std::mt19937 &mEngine;
     std::unordered_map<std::string, Trainer::Node *> mStrategy;
 };
