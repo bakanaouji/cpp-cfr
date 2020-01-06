@@ -32,7 +32,7 @@ public:
 
     float chanceProbability() const;
 
-    int playerNum() const;
+    static int playerNum();
 
     bool done() const;
 

@@ -8,7 +8,7 @@ file(GLOB AgentSource ../RegretMinimization/Agent/*.cpp)
 file(GLOB KuhnSource Kuhn/*.cpp)
 add_executable(Game main.cpp ${KuhnSource} ${CFRSource} ${AgentSource})
 
-include_directories(Kuhn ../RegretMinimization/Agent ../RegretMinimization/Trainer)
+include_directories(Kuhn ../RegretMinimization/Agent ../RegretMinimization/Trainer ../libs)
 
 find_package(Boost COMPONENTS serialization filesystem)
 if(Boost_FOUND)
