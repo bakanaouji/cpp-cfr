@@ -109,7 +109,7 @@ void Trainer<T>::train(const int iterations) {
             if (!mUpdate[p]) {
                 continue;
             }
-            if (mModeStr == "cfr") {
+            if (mModeStr == "vanilla") {
                 mGame->reset(false);
                 utils[p] = CFR(*mGame, p, 1.0f, 1.0f);
             } else {
