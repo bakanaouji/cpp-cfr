@@ -172,7 +172,7 @@ std::string Game::infoSetStr() const {
     return std::string((char *) mInfoSets[mCurrentPlayer], mTurnNum + 1);
 }
 
-int Game::playerNum() const {
+int Game::playerNum() {
     return PlayerNum;
 }
 

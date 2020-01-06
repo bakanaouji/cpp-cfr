@@ -21,7 +21,7 @@ namespace Trainer {
 template <typename T>
 class Trainer {
 public:
-    explicit Trainer(const std::string &mode, const std::vector<std::string> &strategyPaths = {});
+    explicit Trainer(const std::string &mode, const uint32_t seed, const std::vector<std::string> &strategyPaths = {});
 
     ~Trainer();
 

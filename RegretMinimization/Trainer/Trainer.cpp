@@ -15,7 +15,7 @@
 namespace Trainer {
 
 template <typename T>
-Trainer<T>::Trainer(const std::string &mode, const std::vector<std::string> &strategyPaths) : mEngine((std::random_device()())), mNodeTouchedCnt(0), mModeStr(mode) {
+Trainer<T>::Trainer(const std::string &mode, const uint32_t seed, const std::vector<std::string> &strategyPaths) : mEngine(seed), mNodeTouchedCnt(0), mModeStr(mode) {
     mGame = new T(mEngine);
     mFolderPath = "../strategies/" + mGame->name();
     boost::filesystem::create_directories(mFolderPath);
@@ -109,7 +109,7 @@ void Trainer<T>::train(const int iterations) {
             if (!mUpdate[p]) {
                 continue;
             }
-            if (mModeStr == "cfr") {
+            if (mModeStr == "vanilla") {
                 mGame->reset(false);
                 utils[p] = CFR(*mGame, p, 1.0f, 1.0f);
             } else {
