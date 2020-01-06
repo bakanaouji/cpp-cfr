@@ -5,7 +5,6 @@
 #ifndef REGRETMINIMIZATION_TRAINER_HPP
 #define REGRETMINIMIZATION_TRAINER_HPP
 
-#include <array>
 #include <functional>
 #include <random>
 #include <string>

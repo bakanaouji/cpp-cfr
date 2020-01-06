@@ -2,9 +2,9 @@
 // Copyright (c) 2020 Kenshi Abe
 //
 
+#include "Game.hpp"
 #include "Trainer.hpp"
 #include "Trainer.cpp"
-#include "Game.hpp"
 
 int main() {
     Trainer::Trainer<Kuhn::Game> trainer("cfr");

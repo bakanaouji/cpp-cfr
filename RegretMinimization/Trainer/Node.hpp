@@ -5,9 +5,7 @@
 #ifndef REGRETMINIMIZATION_NODE_HPP
 #define REGRETMINIMIZATION_NODE_HPP
 
-#include <string>
 #include <vector>
-#include <iostream>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/vector.hpp>

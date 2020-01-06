@@ -4,10 +4,6 @@
 
 #include "Node.hpp"
 
-#include <iomanip>
-#include <sstream>
-#include <iostream>
-
 namespace Trainer {
 
 Node::Node(const int actionNum) : mActionNum(actionNum), mAlreadyCalculated(false) {
