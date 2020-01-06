@@ -26,7 +26,7 @@ $ ./build/RegretMinimization
 Once complete, you should have a binary file that represents the average strategy, like `strategies/kuhn/strategy_cfr.bin`.
 
 ### Evaluating average strategies
-If you have finished computing an approximate Nash equilibrium, you can compute the expected payoff of the obtained average strategy.
+If you have finished computing an approximate Nash equilibrium, you can compute the expected payoff of the obtained average strategy:
 
 ```bash
 $ cd Game
@@ -39,6 +39,21 @@ As a result of executing these commands, the command-line interface will output 
 ```bash
 expected payoffs: (-0.0555557,0.0555557,)
 ```
+
+### Running with Docker
+This repository also provides `Dockerfile` for docker users.
+If you want to run with Docker, build the container:
+
+```bash
+$ docker build -t open-cfr .
+```
+
+After build finished, run the container:
+
+```bash
+$ docker run -it open-cfr
+```
+
 
 ## References
 [1] Martin Zinkevich, Michael Johanson, Michael Bowling, and Carmelo Piccione. Regret minimization in games with incomplete information. In Advances in neural information processing systems, pp. 1729–1736, 2008.
