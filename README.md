@@ -1,4 +1,4 @@
-# Open CFR
+# Cpp CFR
 This repository is C++ implementations of Counterfactual Regret Minimization (CFR) [1] algorithms for an extensive-form game with imperfect information.
 CFR is an iterative algorithm that is proven to converge to a Nash equilibrium in two-player zero-sum games.
 Currently, this repository provides the following variants of CFR implementation:
@@ -61,13 +61,13 @@ This repository also provides `Dockerfile` for docker users.
 If you want to run with Docker, build the container:
 
 ```bash
-$ docker build -t open-cfr .
+$ docker build -t cpp-cfr .
 ```
 
 After build finished, run the container:
 
 ```bash
-$ docker run -it open-cfr
+$ docker run -it cpp-cfr
 ```
 
 
