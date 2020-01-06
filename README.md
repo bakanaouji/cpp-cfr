@@ -44,8 +44,11 @@ If you have finished computing an approximate Nash equilibrium, you can compute 
 ```bash
 $ cd Game
 $ sh build.sh
-$ ./build/Game
+$ ./build/Game --strategy-path-0="../strategies/kuhn/strategy_cfr.bin" --strategy-path-1="../strategies/kuhn/strategy_cfr.bin"
 ```
+
+This command requires arguments that the paths to the binary files that represent the average strategies for players.
+You should specify the path for each player as `strategy-path-0`, `strategy-path-1` and so on.
 
 As a result of executing these commands, the command-line interface will output the expected payoff of each player:
 
