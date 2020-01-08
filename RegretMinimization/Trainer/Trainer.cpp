@@ -405,7 +405,6 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
 template <typename T>
 void Trainer<T>::writeStrategyToJson(const int iteration) const {
     for (auto &itr : mNodeMap) {
-        itr.second->calcAverageStrategy();
 //        std::cout << itr.first << ":";
         for (int i = 0; i < itr.first.size(); ++i) {
             std::cout << int(itr.first[i]);

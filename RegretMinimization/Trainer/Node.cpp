@@ -66,8 +66,10 @@ const float *Node::strategy() {
     return mStrategy;
 }
 
-const float *Node::averageStrategy() const {
-    assert(mAlreadyCalculated);
+const float *Node::averageStrategy() {
+    if (!mAlreadyCalculated) {
+        calcAverageStrategy();
+    }
     return mAverageStrategy;
 }
 

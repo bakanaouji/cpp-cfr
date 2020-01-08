@@ -27,16 +27,13 @@ public:
 
     /// @brief Get the average strategy across all training iterations
     /// @return average mixed strategy
-    const float *averageStrategy() const;
+    const float *averageStrategy();
 
     /// @brief Update the average strategy by doing addition the current strategy weighted by the contribution of the acting player at the this node.
     ///        The contribution is the probability of reaching this node if all players other than the acting player always choose actions leading to this node.
     /// @param strategy current strategy
     /// @param realizationWeight contribution of the acting player at this node
     void strategySum(const float *strategy, const float realizationWeight);
-
-    /// @brief Calculate the average strategy across all training iterations
-    void calcAverageStrategy();
 
     /// @brief Get the cumulative counterfactual regret of the specified action
     /// @param action action
@@ -54,6 +51,9 @@ public:
 
 private:
     friend class boost::serialization::access;
+
+    /// @brief Calculate the average strategy across all training iterations
+    void calcAverageStrategy();
 
     template<class Archive>
     void save(Archive &ar, const unsigned int version) const {
