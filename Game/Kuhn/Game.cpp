@@ -10,6 +10,7 @@
 
 namespace Kuhn {
 
+/// @param engine Mersenne Twister pseudo-random generator
 Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1), mChanceProbability(0.0f), mFirstBetTurn(-1), mBetPlayerNum(0), mTurnNum(0), mDone(false) {
     for (auto & infoSet : mInfoSets) {
         for (uint8_t & i : infoSet) {
@@ -18,6 +19,8 @@ Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1
     }
 }
 
+/// @brief Copy constructor
+/// @param obj source game
 Game::Game(const Game &obj) : mEngine(obj.mEngine), mCards(obj.mCards), mPayoff(obj.mPayoff),
                               mCurrentPlayer(obj.mCurrentPlayer), mChanceProbability(obj.mChanceProbability), mFirstBetTurn(obj.mFirstBetTurn), mBetPlayerNum(obj.mBetPlayerNum), mTurnNum(obj.mTurnNum), mDone(obj.mDone) {
     for (int i = 0; i < PlayerNum; ++i) {
@@ -25,6 +28,22 @@ Game::Game(const Game &obj) : mEngine(obj.mEngine), mCards(obj.mCards), mPayoff(
     }
 }
 
+/// @brief Get the name of this game
+/// @return name of game
+std::string Game::name() {
+    return "kuhn";
+}
+
+/// @brief Get the number of players
+/// @return number of players
+int Game::playerNum() {
+    return PlayerNum;
+}
+
+/// @brief reset and start new game
+/// @param skipChanceAction whether to sample an action of the chance player.
+///                         If this argument is set to false, `step` function is called recursively until
+///                         the acting player becomes a player other than the chance player.
 void Game::reset(bool skipChanceAction) {
     if (!skipChanceAction) {
         mCurrentPlayer = PlayerNum + 1;
@@ -51,6 +70,8 @@ void Game::reset(bool skipChanceAction) {
     mDone = false;
 }
 
+/// @brief transition current node to the next node
+/// @param action action
 void Game::step(const int action) {
     // chance node action
     if (mCurrentPlayer == PlayerNum + 1) {
@@ -164,18 +185,27 @@ void Game::step(const int action) {
     mCurrentPlayer = player;
 }
 
+/// @brief Get the payoff of the specified player
+/// @param playerIndex index of the player
+/// @return payoff
 float Game::payoff(const int playerIndex) const {
     return mPayoff[playerIndex];
 }
 
+/// @brief Get the information set string representation
+/// @return string representation of the current information set
 std::string Game::infoSetStr() const {
     return std::string((char *) mInfoSets[mCurrentPlayer], mTurnNum + 1);
 }
 
-int Game::playerNum() {
-    return PlayerNum;
+/// @brief Check whether the game is over
+/// @return if the game is over, `true` is returned
+bool Game::done() const {
+    return mDone;
 }
 
+/// @brief Get the number of available actions at the current information set
+/// @return number of available actions
 int Game::actionNum() const {
     if (mCurrentPlayer == PlayerNum + 1) {
         constexpr int ChanceAN = ChanceActionNum();
@@ -184,24 +214,22 @@ int Game::actionNum() const {
     return (int) Action::NUM;
 }
 
-float Game::chanceProbability() const {
-    return mChanceProbability;
-}
-
+/// @brief Get the index of the acting player
+/// @return index of acting player
 int Game::currentPlayer() const {
     return mCurrentPlayer;
 }
 
-bool Game::done() const {
-    return mDone;
+/// @brief Get the likelihood that the last action is chosen by the chance player
+/// @return likelihood
+float Game::chanceProbability() const {
+    return mChanceProbability;
 }
 
+/// @brief Check whether the current acting player is the chance player
+/// @return if the acting player is the chance player, `true` is returned
 bool Game::isChanceNode() const {
     return mCurrentPlayer == PlayerNum + 1;
-}
-
-std::string Game::name() const {
-    return "kuhn";
 }
 
 } // namespace
