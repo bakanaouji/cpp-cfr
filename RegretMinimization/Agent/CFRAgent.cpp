@@ -11,7 +11,8 @@
 
 namespace Agent {
 
-/// constructor
+/// @param engine Mersenne Twister pseudo-random generator
+/// @param path path to the binary file that represents the average strategy
 template <typename T>
 CFRAgent<T>::CFRAgent(std::mt19937 &engine, const std::string &path) : mEngine(engine) {
     std::ifstream ifs(path);
@@ -20,7 +21,6 @@ CFRAgent<T>::CFRAgent(std::mt19937 &engine, const std::string &path) : mEngine(e
     ifs.close();
 }
 
-/// destructor
 template <typename T>
 CFRAgent<T>::~CFRAgent() {
     for (auto &itr : mStrategy) {
@@ -28,7 +28,9 @@ CFRAgent<T>::~CFRAgent() {
     }
 }
 
-/// choose action
+/// @brief Choose an action at the current game node
+/// @param game game
+/// @return chosen action
 template <typename T>
 int CFRAgent<T>::action(const T &game) const {
     if (game.actionNum() == 1) {
@@ -40,7 +42,9 @@ int CFRAgent<T>::action(const T &game) const {
     return dist(mEngine);
 }
 
-/// get probability of choosing each action
+/// @brief Get the probability of choosing each action
+/// @param game game
+/// @return list of the probabilities
 template <typename T>
 const float *CFRAgent<T>::strategy(const T &game) const {
     return mStrategy.at(game.infoSetStr())->averageStrategy();
