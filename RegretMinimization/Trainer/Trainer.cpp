@@ -14,7 +14,6 @@
 
 namespace Trainer {
 
-/// @param T Type of Game
 /// @param mode variant of CFR algorithm
 /// @param seed random seed
 /// @param strategyPaths paths to the binary files that represent fixed strategies
@@ -57,7 +56,6 @@ Trainer<T>::~Trainer() {
     delete mGame;
 }
 
-/// @param T Type of Game
 /// @brief Calculate the expected payoff of each player
 /// @param game game
 /// @param strategies list of strategies for each player
@@ -109,7 +107,6 @@ std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<
     return nodeUtils;
 }
 
-/// @param T Type of Game
 /// @brief Execute the CFR algorithm to compute an approximate Nash equilibrium
 /// @param iterations number of iterations of CFR
 template <typename T>
@@ -152,7 +149,6 @@ void Trainer<T>::train(const int iterations) {
     writeStrategyToBin();
 }
 
-/// @param T Type of Game
 /// @brief Main procedure of vanilla CFR
 /// @param game game
 /// @param playerIndex player whose strategy is updated in the current iteration
@@ -235,7 +231,6 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     return nodeUtil;
 }
 
-/// @param T Type of Game
 /// @brief Main procedure of chance-sampling MCCFR
 /// @param game game
 /// @param playerIndex player whose strategy is updated in the current iteration
@@ -303,7 +298,6 @@ float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const 
     return nodeUtil;
 }
 
-/// @param T Type of Game
 /// @brief Main procedure of external-sampling MCCFR
 /// @param game game
 /// @param playerIndex player whose strategy is updated in the current iteration
@@ -366,7 +360,6 @@ float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
     return nodeUtil;
 }
 
-/// @param T Type of Game
 /// @brief Main procedure of outcome-sampling MCCFR
 /// @param game game
 /// @param playerIndex player whose strategy is updated in the current iteration
@@ -441,7 +434,6 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
     return std::make_tuple(util, pTail * strategy[action]);
 }
 
-/// @param T Type of Game
 /// @brief Save the current average strategy as a binary file
 /// @param iteration current iteration
 template <typename T>
