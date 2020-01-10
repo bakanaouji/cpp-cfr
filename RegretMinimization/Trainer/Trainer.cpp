@@ -14,6 +14,10 @@
 
 namespace Trainer {
 
+/// @param T Type of Game
+/// @param mode variant of CFR algorithm
+/// @param seed random seed
+/// @param strategyPaths paths to the binary files that represent fixed strategies
 template <typename T>
 Trainer<T>::Trainer(const std::string &mode, const uint32_t seed, const std::vector<std::string> &strategyPaths) : mEngine(seed), mNodeTouchedCnt(0), mModeStr(mode) {
     mGame = new T(mEngine);
@@ -53,6 +57,11 @@ Trainer<T>::~Trainer() {
     delete mGame;
 }
 
+/// @param T Type of Game
+/// @brief Calculate the expected payoff of each player
+/// @param game game
+/// @param strategies list of strategies for each player
+/// @return list of expected payoffs
 template <typename T>
 std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies) {
     // return payoff for terminal states
@@ -100,6 +109,9 @@ std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<
     return nodeUtils;
 }
 
+/// @param T Type of Game
+/// @brief Execute the CFR algorithm to compute an approximate Nash equilibrium
+/// @param iterations number of iterations of CFR
 template <typename T>
 void Trainer<T>::train(const int iterations) {
     float utils[mGame->playerNum()];
@@ -133,13 +145,20 @@ void Trainer<T>::train(const int iterations) {
             std::cout << ")" << std::endl;
         }
         if (i != 0 && i % 10000000 == 0) {
-            writeStrategyToJson(i);
+            writeStrategyToBin(i);
         }
     }
 
-    writeStrategyToJson();
+    writeStrategyToBin();
 }
 
+/// @param T Type of Game
+/// @brief Main procedure of vanilla CFR
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @param pi the probability of reaching the current game node if all players other than the acting player always choose actions leading to the current game node
+/// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
+/// @return expected payoff of the specified player at the current game node
 template <typename T>
 float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, const float po) {
     ++mNodeTouchedCnt;
@@ -216,6 +235,13 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     return nodeUtil;
 }
 
+/// @param T Type of Game
+/// @brief Main procedure of chance-sampling MCCFR
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @param pi the probability of reaching the current game node if all players other than the acting player always choose actions leading to the current game node
+/// @param po the probability of reaching the current game node if the acting player and the chance player always choose actions leading to the current game node
+/// @return estimated expected payoff of the specified player at the current game node
 template <typename T>
 float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const float pi, const float po) {
     ++mNodeTouchedCnt;
@@ -277,6 +303,11 @@ float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const 
     return nodeUtil;
 }
 
+/// @param T Type of Game
+/// @brief Main procedure of external-sampling MCCFR
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @return estimated expected payoff of the specified player at the current game node
 template <typename T>
 float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
     ++mNodeTouchedCnt;
@@ -335,6 +366,14 @@ float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
     return nodeUtil;
 }
 
+/// @param T Type of Game
+/// @brief Main procedure of outcome-sampling MCCFR
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @param pi the probability of reaching the current game node if all players other than the acting player always choose actions leading to the current game node
+/// @param po the probability of reaching the current game node if the acting player and the chance player always choose actions leading to the current game node
+/// @param s the probability of reaching the current game node if the chance player always chooses actions leading to the current game node and the other players act according to the sample profile
+/// @return estimated expected payoff of the specified player at the current game node, and the probability of reaching the terminal game node if the chance player always chooses actions leading to the terminal game node
 template <typename T>
 std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int playerIndex, const int iteration , const float pi, const float po, const float s) {
     ++mNodeTouchedCnt;
@@ -402,8 +441,11 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
     return std::make_tuple(util, pTail * strategy[action]);
 }
 
+/// @param T Type of Game
+/// @brief Save the current average strategy as a binary file
+/// @param iteration current iteration
 template <typename T>
-void Trainer<T>::writeStrategyToJson(const int iteration) const {
+void Trainer<T>::writeStrategyToBin(const int iteration) const {
     for (auto &itr : mNodeMap) {
 //        std::cout << itr.first << ":";
         for (int i = 0; i < itr.first.size(); ++i) {
