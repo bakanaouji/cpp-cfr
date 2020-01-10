@@ -18,15 +18,16 @@
 #define GAME Kuhn::Game
 
 int main(int argc, char *argv[]) {
+    // parse arguments
     cmdline::parser p;
     p.add<uint32_t>("seed", 's', "Random seed used to initialize the random generator", false);
     for (int i = 0; i < GAME::playerNum(); ++i) {
         p.add<std::string>("strategy-path-" + std::to_string(i), 0,
                            "Path to the binary file that represents the average strategy for player " + std::to_string(i), true);
     }
-
     p.parse_check(argc, argv);
 
+    // create game
     std::mt19937 engine(p.exist("seed") ? p.get<uint32_t>("seed") : std::random_device()());
     GAME game(engine);
 
