@@ -12,20 +12,25 @@
 
 namespace Agent {
 
-/// Agent that acts according to average strategy obtained by CFR
+/// @param Agent that acts according to average strategy obtained by CFR
+/// @param T Type of Game
 template <typename T>
 class CFRAgent {
 public:
-    /// constructor
+    /// @param engine Mersenne Twister pseudo-random generator
+    /// @param path path to the binary file that represents the average strategy
     explicit CFRAgent(std::mt19937 &engine, const std::string &path);
 
-    /// destructor
     ~CFRAgent();
 
-    /// choose action
+    /// @brief Choose an action at the current game node
+    /// @param game game
+    /// @return chosen action
     int action(const T &game) const;
 
-    /// get probability of choosing each action
+    /// @brief Get the probability of choosing each action
+    /// @param game game
+    /// @return list of the probabilities
     const float *strategy(const T &game) const;
 
 private:

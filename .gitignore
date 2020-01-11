@@ -1,3 +1,5 @@
 cmake-build-debug/
 build/
 strategies/
+html/
+latex/
