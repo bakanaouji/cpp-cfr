@@ -23,6 +23,8 @@ namespace Trainer {
 template <typename T>
 class Trainer {
 public:
+    using InfoSets = typename std::unordered_map<std::string, std::vector<std::tuple<T, float>>>;
+
     /// @param mode variant of CFR algorithm
     /// @param seed random seed
     /// @param strategyPaths paths to the binary files that represent fixed strategies
@@ -35,6 +37,31 @@ public:
     /// @param strategies list of strategies for each player
     /// @return list of expected payoffs
     static std::vector<float> CalculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies);
+
+    /// @brief Calculate exploitability of a given strategy profile
+    /// @param game game
+    /// @param strategies list of strategies for each player
+    /// @return exploitability of a given strategy profile
+    static float CalculateExploitability(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies);
+
+    /// @brief Fill the ordered map that maps information sets to game nodes and reach probabilities
+    /// @param game game
+    /// @param playerIndex player whose strategy is updated in the current iteration
+    /// @param strategies list of strategies for each player
+    /// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
+    /// @param infoSets ordered map that maps information sets to game nodes and reach probabilities
+    /// @return exploitability of a given strategy profile
+    static void CreateInfoSets(const T &game, const int playerIndex, const std::vector<std::function<const float *(const T &)>> &strategies, const float po, InfoSets &infoSets);
+
+    /// @brief Calculate best response value for a given player
+    /// @param game game
+    /// @param playerIndex player whose strategy is updated in the current iteration
+    /// @param strategies list of strategies for each player
+    /// @param bestResponseStrategies best response strategy for a given player
+    /// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
+    /// @param infoSets ordered map that maps information sets to game nodes and reach probabilities
+    /// @return best response value for a given player
+    static float CalculateBestResponseValue(const T &game, const int playerIndex, const std::vector<std::function<const float *(const T &)>> &strategies, std::unordered_map<std::string, std::vector<float>> &bestResponseStrategies, const float po, const InfoSets &infoSets);
 
     /// @brief Execute the CFR algorithm to compute an approximate Nash equilibrium
     /// @param iterations number of iterations of CFR

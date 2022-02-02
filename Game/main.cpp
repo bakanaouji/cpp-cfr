@@ -49,6 +49,11 @@ int main(int argc, char *argv[]) {
     }
     std::cout << ")" << std::endl;
 
+    // calculate exploitability
+    game.reset(false);
+    float exploitability = Trainer::Trainer<GAME>::CalculateExploitability(game, strategies);
+    std::cout << "exploitability: " << exploitability << std::endl;
+
     // finalize
     for (int i = 0; i < GAME::playerNum(); ++i) {
         delete cfrAgents[i];

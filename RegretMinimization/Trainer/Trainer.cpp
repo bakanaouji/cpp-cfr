@@ -107,6 +107,163 @@ std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<
     return nodeUtils;
 }
 
+/// @brief Calculate exploitability of a given strategy profile
+/// @param game game
+/// @param strategies list of strategies for each player
+/// @return exploitability of a given strategy profile
+template <typename T>
+float Trainer<T>::CalculateExploitability(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies) {
+    InfoSets infoSets;
+    for (int p = 0; p < game.playerNum(); ++p) {
+        auto game_cp(game);
+        game_cp.reset(false);
+        CreateInfoSets(game_cp, p, strategies, 1.0f, infoSets);
+    }
+
+    float exploitability = 0.0f;
+    for (int p = 0; p < game.playerNum(); ++p) {
+        auto game_cp(game);
+        game_cp.reset(false);
+        std::unordered_map<std::string, std::vector<float>> bestResponseStrategies;
+        exploitability += CalculateBestResponseValue(game_cp, p, strategies, bestResponseStrategies, 1.0f, infoSets);
+    }
+    return exploitability;
+}
+
+/// @brief Fill the ordered map that maps information sets to game nodes and reach probabilities
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @param strategies list of strategies for each player
+/// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
+/// @return exploitability of a given strategy profile
+template <typename T>
+void Trainer<T>::CreateInfoSets(const T &game, const int playerIndex, const std::vector<std::function<const float *(const T &)>> &strategies, const float po, InfoSets &infoSets) {
+    // return at terminal states
+    if (game.done()) {
+        return;
+    }
+
+    // chance node turn
+    const int actionNum = game.actionNum();
+    if (game.isChanceNode()) {
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const float chanceProbability = game_cp.chanceProbability();
+            CreateInfoSets(game_cp, playerIndex, strategies, po * chanceProbability, infoSets);
+        }
+        return;
+    }
+
+    const int player = game.currentPlayer();
+    if (player == playerIndex) {
+        std::string infoSet = game.infoSetStr();
+        if (infoSets.count(infoSet) == 0) {
+            infoSets[infoSet] = std::vector<std::tuple<T, float>>();
+        }
+        infoSets[infoSet].push_back(std::make_tuple(game, po));
+    }
+
+    for (int a = 0; a < actionNum; ++a) {
+        auto game_cp(game);
+        game_cp.step(a);
+        if (player == playerIndex) {
+            CreateInfoSets(game_cp, playerIndex, strategies, po, infoSets);
+        } else {
+            const float actionProb = strategies[player](game)[a];
+            CreateInfoSets(game_cp, playerIndex, strategies, po * actionProb, infoSets);
+        }
+    }
+}
+
+/// @brief Calculate best response value for a given player
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @param strategies list of strategies for each player
+/// @param bestResponseStrategies best response strategy for a given player
+/// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
+/// @param infoSets ordered map that maps information sets to game nodes and reach probabilities
+/// @return best response value for a given player
+template <typename T>
+float Trainer<T>::CalculateBestResponseValue(const T &game, const int playerIndex,
+                                             const std::vector<std::function<const float *(const T &)>> &strategies,
+                                             std::unordered_map<std::string, std::vector<float>> &bestResponseStrategies,
+                                             const float po,
+                                             const InfoSets &infoSets) {
+    // return payoff for terminal states
+    if (game.done()) {
+        return game.payoff(playerIndex);
+    }
+
+    // chance node turn
+    const int actionNum = game.actionNum();
+    if (game.isChanceNode()) {
+        float nodeUtil = 0.0f;
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const float chanceProbability = game_cp.chanceProbability();
+            nodeUtil += chanceProbability * CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po * chanceProbability, infoSets);
+        }
+        return nodeUtil;
+    }
+
+    const int player = game.currentPlayer();
+    if (player == playerIndex) {
+        // get information set string representation
+        std::string infoSet = game.infoSetStr();
+        if (bestResponseStrategies.count(infoSet) == 0) {
+            // calculate action values
+            float actionValues[actionNum];
+            for (int a = 0; a < actionNum; ++a) {
+                actionValues[a] = 0.0f;
+            }
+            for (int i = 0; i < infoSets.at(infoSet).size(); ++i) {
+                auto game_ = std::get<0>(infoSets.at(infoSet)[i]);
+                auto po_ = std::get<1>(infoSets.at(infoSet)[i]);
+                float brValues[actionNum];
+                for (int a = 0; a < actionNum; ++a) {
+                    auto game_cp(game_);
+                    game_cp.step(a);
+                    brValues[a] = CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po_, infoSets);
+                    actionValues[a] += po_ * brValues[a];
+                }
+            }
+            // calculate best response strategy
+            int brAction = 0;
+            for (int a = 0; a < actionNum; ++a) {
+                if (actionValues[a] > actionValues[brAction]) {
+                    brAction = a;
+                }
+            }
+            bestResponseStrategies[infoSet] = std::vector<float>(actionNum, 0.0f);
+            bestResponseStrategies[infoSet][brAction] = 1.0f;
+        }
+        // calculate best response value
+        float utils[actionNum];
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            utils[a] = CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po, infoSets);
+        }
+        float bestResponseValue = 0.0f;
+        for (int a = 0; a < actionNum; ++a) {
+            bestResponseValue += utils[a] * bestResponseStrategies.at(infoSet)[a];
+        }
+        return bestResponseValue;
+    } else {
+        // for each action, recursively calculate payoff with additional history and probability
+        float nodeUtil = 0.0f;
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const float actionProb = strategies[player](game)[a];
+            nodeUtil += actionProb * CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po * actionProb, infoSets);
+        }
+        return nodeUtil;
+    }
+}
+
 /// @brief Execute the CFR algorithm to compute an approximate Nash equilibrium
 /// @param iterations number of iterations of CFR
 template <typename T>
