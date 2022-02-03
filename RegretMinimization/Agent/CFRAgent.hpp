@@ -31,7 +31,7 @@ public:
     /// @brief Get the probability of choosing each action
     /// @param game game
     /// @return list of the probabilities
-    const float *strategy(const T &game) const;
+    const double *strategy(const T &game) const;
 
 private:
     std::mt19937 &mEngine;

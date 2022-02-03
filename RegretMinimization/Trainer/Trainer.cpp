@@ -4,7 +4,6 @@
 
 #include "Trainer.hpp"
 
-#include <fstream>
 #include <iostream>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -61,10 +60,10 @@ Trainer<T>::~Trainer() {
 /// @param strategies list of strategies for each player
 /// @return list of expected payoffs
 template <typename T>
-std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<std::function<const float *(const T &)>> &strategies) {
+std::vector<double> Trainer<T>::CalculatePayoff(const T &game, const std::vector<std::function<const double *(const T &)>> &strategies) {
     // return payoff for terminal states
     if (game.done()) {
-        std::vector<float> payoffs(game.playerNum());
+        std::vector<double> payoffs(game.playerNum());
         for (int i = 0; i < game.playerNum(); ++i) {
             payoffs[i] = game.payoff(i);
         }
@@ -74,15 +73,15 @@ std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<
     // chance node turn
     const int actionNum = game.actionNum();
     if (game.isChanceNode()) {
-        std::vector<float> nodeUtils(game.playerNum());
+        std::vector<double> nodeUtils(game.playerNum());
         for (int i = 0; i < game.playerNum(); ++i) {
-            nodeUtils[i] = 0.0f;
+            nodeUtils[i] = 0.0;
         }
         for (int a = 0; a < actionNum; ++a) {
             auto game_cp(game);
             game_cp.step(a);
-            const float chanceProbability = game_cp.chanceProbability();
-            std::vector<float> utils = CalculatePayoff(game_cp, strategies);
+            const double chanceProbability = game_cp.chanceProbability();
+            std::vector<double> utils = CalculatePayoff(game_cp, strategies);
             for (int i = 0; i < game.playerNum(); ++i) {
                 nodeUtils[i] += chanceProbability * utils[i];
             }
@@ -92,14 +91,14 @@ std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<
 
     // for each action, recursively calculate payoff with additional history and probability
     const int player = game.currentPlayer();
-    std::vector<float> nodeUtils(game.playerNum());
+    std::vector<double> nodeUtils(game.playerNum());
     for (int i = 0; i < game.playerNum(); ++i) {
-        nodeUtils[i] = 0.0f;
+        nodeUtils[i] = 0.0;
     }
     for (int a = 0; a < actionNum; ++a) {
         auto game_cp(game);
         game_cp.step(a);
-        std::vector<float> utils = CalculatePayoff(game_cp, strategies);
+        std::vector<double> utils = CalculatePayoff(game_cp, strategies);
         for (int i = 0; i < game.playerNum(); ++i) {
             nodeUtils[i] += strategies[player](game)[a] * utils[i];
         }
@@ -107,11 +106,168 @@ std::vector<float> Trainer<T>::CalculatePayoff(const T &game, const std::vector<
     return nodeUtils;
 }
 
+/// @brief Calculate exploitability of a given strategy profile
+/// @param game game
+/// @param strategies list of strategies for each player
+/// @return exploitability of a given strategy profile
+template <typename T>
+double Trainer<T>::CalculateExploitability(const T &game, const std::vector<std::function<const double *(const T &)>> &strategies) {
+    InfoSets infoSets;
+    for (int p = 0; p < game.playerNum(); ++p) {
+        auto game_cp(game);
+        game_cp.reset(false);
+        CreateInfoSets(game_cp, p, strategies, 1.0, infoSets);
+    }
+
+    double exploitability = 0.0;
+    for (int p = 0; p < game.playerNum(); ++p) {
+        auto game_cp(game);
+        game_cp.reset(false);
+        std::unordered_map<std::string, std::vector<double>> bestResponseStrategies;
+        exploitability += CalculateBestResponseValue(game_cp, p, strategies, bestResponseStrategies, 1.0, infoSets);
+    }
+    return exploitability;
+}
+
+/// @brief Fill the ordered map that maps information sets to game nodes and reach probabilities
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @param strategies list of strategies for each player
+/// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
+/// @return exploitability of a given strategy profile
+template <typename T>
+void Trainer<T>::CreateInfoSets(const T &game, const int playerIndex, const std::vector<std::function<const double *(const T &)>> &strategies, const double po, InfoSets &infoSets) {
+    // return at terminal states
+    if (game.done()) {
+        return;
+    }
+
+    // chance node turn
+    const int actionNum = game.actionNum();
+    if (game.isChanceNode()) {
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const double chanceProbability = game_cp.chanceProbability();
+            CreateInfoSets(game_cp, playerIndex, strategies, po * chanceProbability, infoSets);
+        }
+        return;
+    }
+
+    const int player = game.currentPlayer();
+    if (player == playerIndex) {
+        std::string infoSet = game.infoSetStr();
+        if (infoSets.count(infoSet) == 0) {
+            infoSets[infoSet] = std::vector<std::tuple<T, double>>();
+        }
+        infoSets[infoSet].push_back(std::make_tuple(game, po));
+    }
+
+    for (int a = 0; a < actionNum; ++a) {
+        auto game_cp(game);
+        game_cp.step(a);
+        if (player == playerIndex) {
+            CreateInfoSets(game_cp, playerIndex, strategies, po, infoSets);
+        } else {
+            const double actionProb = strategies[player](game)[a];
+            CreateInfoSets(game_cp, playerIndex, strategies, po * actionProb, infoSets);
+        }
+    }
+}
+
+/// @brief Calculate best response value for a given player
+/// @param game game
+/// @param playerIndex player whose strategy is updated in the current iteration
+/// @param strategies list of strategies for each player
+/// @param bestResponseStrategies best response strategy for a given player
+/// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
+/// @param infoSets ordered map that maps information sets to game nodes and reach probabilities
+/// @return best response value for a given player
+template <typename T>
+double Trainer<T>::CalculateBestResponseValue(const T &game, const int playerIndex,
+                                             const std::vector<std::function<const double *(const T &)>> &strategies,
+                                             std::unordered_map<std::string, std::vector<double>> &bestResponseStrategies,
+                                             const double po,
+                                             const InfoSets &infoSets) {
+    // return payoff for terminal states
+    if (game.done()) {
+        return game.payoff(playerIndex);
+    }
+
+    // chance node turn
+    const int actionNum = game.actionNum();
+    if (game.isChanceNode()) {
+        double nodeUtil = 0.0;
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const double chanceProbability = game_cp.chanceProbability();
+            nodeUtil += chanceProbability * CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po * chanceProbability, infoSets);
+        }
+        return nodeUtil;
+    }
+
+    const int player = game.currentPlayer();
+    if (player == playerIndex) {
+        // get information set string representation
+        std::string infoSet = game.infoSetStr();
+        if (bestResponseStrategies.count(infoSet) == 0) {
+            // calculate action values
+            double actionValues[actionNum];
+            for (int a = 0; a < actionNum; ++a) {
+                actionValues[a] = 0.0;
+            }
+            for (int i = 0; i < infoSets.at(infoSet).size(); ++i) {
+                auto game_ = std::get<0>(infoSets.at(infoSet)[i]);
+                auto po_ = std::get<1>(infoSets.at(infoSet)[i]);
+                double brValues[actionNum];
+                for (int a = 0; a < actionNum; ++a) {
+                    auto game_cp(game_);
+                    game_cp.step(a);
+                    brValues[a] = CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po_, infoSets);
+                    actionValues[a] += po_ * brValues[a];
+                }
+            }
+            // calculate best response strategy
+            int brAction = 0;
+            for (int a = 0; a < actionNum; ++a) {
+                if (actionValues[a] > actionValues[brAction]) {
+                    brAction = a;
+                }
+            }
+            bestResponseStrategies[infoSet] = std::vector<double>(actionNum, 0.0);
+            bestResponseStrategies[infoSet][brAction] = 1.0;
+        }
+        // calculate best response value
+        double utils[actionNum];
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            utils[a] = CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po, infoSets);
+        }
+        double bestResponseValue = 0.0;
+        for (int a = 0; a < actionNum; ++a) {
+            bestResponseValue += utils[a] * bestResponseStrategies.at(infoSet)[a];
+        }
+        return bestResponseValue;
+    } else {
+        // for each action, recursively calculate payoff with additional history and probability
+        double nodeUtil = 0.0;
+        for (int a = 0; a < actionNum; ++a) {
+            auto game_cp(game);
+            game_cp.step(a);
+            const double actionProb = strategies[player](game)[a];
+            nodeUtil += actionProb * CalculateBestResponseValue(game_cp, playerIndex, strategies, bestResponseStrategies, po * actionProb, infoSets);
+        }
+        return nodeUtil;
+    }
+}
+
 /// @brief Execute the CFR algorithm to compute an approximate Nash equilibrium
 /// @param iterations number of iterations of CFR
 template <typename T>
 void Trainer<T>::train(const int iterations) {
-    float utils[mGame->playerNum()];
+    double utils[mGame->playerNum()];
 
     for (int i = 0; i < iterations; ++i) {
         for (int p = 0; p < mGame->playerNum(); ++p) {
@@ -120,15 +276,21 @@ void Trainer<T>::train(const int iterations) {
             }
             if (mModeStr == "vanilla") {
                 mGame->reset(false);
-                utils[p] = CFR(*mGame, p, 1.0f, 1.0f);
+                utils[p] = CFR(*mGame, p, 1.0, 1.0);
+                for (auto & itr : mNodeMap) {
+                    itr.second->updateStrategy();
+                }
             } else {
                 mGame->reset();
                 if (mModeStr == "chance") {
-                    utils[p] = chanceSamplingCFR(*mGame, p, 1.0f, 1.0f);
+                    utils[p] = chanceSamplingCFR(*mGame, p, 1.0, 1.0);
+                    for (auto & itr : mNodeMap) {
+                        itr.second->updateStrategy();
+                    }
                 } else if (mModeStr == "external") {
                     utils[p] = externalSamplingCFR(*mGame, p);
                 } else if (mModeStr == "outcome") {
-                    utils[p] = std::get<0>(outcomeSamplingCFR(*mGame, p, i, 1.0f, 1.0f, 1.0f));
+                    utils[p] = std::get<0>(outcomeSamplingCFR(*mGame, p, i, 1.0, 1.0, 1.0));
                 } else {
                     assert(false);
                 }
@@ -156,7 +318,7 @@ void Trainer<T>::train(const int iterations) {
 /// @param po the probability of reaching the current game node if the acting player always chooses actions leading to the current game node
 /// @return expected payoff of the specified player at the current game node
 template <typename T>
-float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, const float po) {
+double Trainer<T>::CFR(const T &game, const int playerIndex, const double pi, const double po) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -167,11 +329,11 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     // chance node turn
     const int actionNum = game.actionNum();
     if (game.isChanceNode()) {
-        float nodeUtil = 0.0f;
+        double nodeUtil = 0.0;
         for (int a = 0; a < actionNum; ++a) {
             auto game_cp(game);
             game_cp.step(a);
-            const float chanceProbability = game_cp.chanceProbability();
+            const double chanceProbability = game_cp.chanceProbability();
             nodeUtil += chanceProbability * CFR(game_cp, playerIndex, pi, po * chanceProbability);
         }
         return nodeUtil;
@@ -183,11 +345,11 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     // treat static player as chance node
     const int player = game.currentPlayer();
     if (!mUpdate[player]) {
-        float nodeUtil = 0.0f;
+        double nodeUtil = 0.0;
         for (int a = 0; a < actionNum; ++a) {
             auto game_cp(game);
             game_cp.step(a);
-            const float chanceProbability = float(mFixedStrategies[player].at(infoSet)->averageStrategy()[a]);
+            const auto chanceProbability = double(mFixedStrategies[player].at(infoSet)->averageStrategy()[a]);
             nodeUtil += chanceProbability * CFR(game_cp, playerIndex, pi, po * chanceProbability);
         }
         return nodeUtil;
@@ -201,11 +363,11 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     }
 
     // get current strategy through regret-matching
-    const float *strategy = node->strategy();
+    const double *strategy = node->strategy();
 
     // for each action, recursively call CFR with additional history and probability
-    float utils[actionNum];
-    float nodeUtil = 0;
+    double utils[actionNum];
+    double nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
         auto game_cp(game);
         game_cp.step(a);
@@ -220,8 +382,8 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
     if (player == playerIndex) {
         // for each action, compute and accumulate counterfactual regret
         for (int a = 0; a < actionNum; ++a) {
-            const float regret = utils[a] - nodeUtil;
-            const float regretSum = node->regretSum(a) + po * regret;
+            const double regret = utils[a] - nodeUtil;
+            const double regretSum = node->regretSum(a) + po * regret;
             node->regretSum(a, regretSum);
         }
         // update average strategy across all training iterations
@@ -238,7 +400,7 @@ float Trainer<T>::CFR(const T &game, const int playerIndex, const float pi, cons
 /// @param po the probability of reaching the current game node if the acting player and the chance player always choose actions leading to the current game node
 /// @return estimated expected payoff of the specified player at the current game node
 template <typename T>
-float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const float pi, const float po) {
+double Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const double pi, const double po) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -268,11 +430,11 @@ float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const 
     }
 
     // get current strategy through regret-matching
-    const float *strategy = node->strategy();
+    const double *strategy = node->strategy();
 
     // for each action, recursively call cfr with additional history and probability
-    float utils[actionNum];
-    float nodeUtil = 0;
+    double utils[actionNum];
+    double nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
         auto game_cp(game);
         game_cp.step(a);
@@ -287,8 +449,8 @@ float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const 
     if (player == playerIndex) {
         // for each action, compute and accumulate counterfactual regret
         for (int a = 0; a < actionNum; ++a) {
-            const float regret = utils[a] - nodeUtil;
-            const float regretSum = node->regretSum(a) + po * regret;
+            const double regret = utils[a] - nodeUtil;
+            const double regretSum = node->regretSum(a) + po * regret;
             node->regretSum(a, regretSum);
         }
         // update average strategy across all training iterations
@@ -303,7 +465,7 @@ float Trainer<T>::chanceSamplingCFR(const T &game, const int playerIndex, const 
 /// @param playerIndex player whose strategy is updated in the current iteration
 /// @return estimated expected payoff of the specified player at the current game node
 template <typename T>
-float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
+double Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
@@ -327,22 +489,23 @@ float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
     }
 
     // get current strategy through regret-matching
-    const float *strategy = node->strategy();
+    node->updateStrategy();
+    const double *strategy = node->strategy();
 
     // if current player is not the target player, sample a single action and recursively call cfr
     if (player != playerIndex) {
         auto game_cp(game);
         std::discrete_distribution<int> dist(strategy, strategy + actionNum);
         game_cp.step(dist(mEngine));
-        const float util = externalSamplingCFR(game_cp, playerIndex);
+        const double util = externalSamplingCFR(game_cp, playerIndex);
         // update average strategy
-        node->strategySum(strategy, 1.0f);
+        node->strategySum(strategy, 1.0);
         return util;
     }
 
     // for each action, recursively call cfr with additional history and probability
-    float utils[actionNum];
-    float nodeUtil = 0;
+    double utils[actionNum];
+    double nodeUtil = 0;
     for (int a = 0; a < actionNum; ++a) {
         auto game_cp(game);
         game_cp.step(a);
@@ -352,8 +515,8 @@ float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
 
     // for each action, compute and accumulate counterfactual regret
     for (int a = 0; a < actionNum; ++a) {
-        const float regret = utils[a] - nodeUtil;
-        const float regretSum = node->regretSum(a) + regret;
+        const double regret = utils[a] - nodeUtil;
+        const double regretSum = node->regretSum(a) + regret;
         node->regretSum(a, regretSum);
     }
 
@@ -368,12 +531,12 @@ float Trainer<T>::externalSamplingCFR(const T &game, const int playerIndex) {
 /// @param s the probability of reaching the current game node if the chance player always chooses actions leading to the current game node and the other players act according to the sample profile
 /// @return estimated expected payoff of the specified player at the current game node, and the probability of reaching the terminal game node if the chance player always chooses actions leading to the terminal game node
 template <typename T>
-std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int playerIndex, const int iteration , const float pi, const float po, const float s) {
+std::tuple<double, double> Trainer<T>::outcomeSamplingCFR(const T &game, const int playerIndex, const int iteration , const double pi, const double po, const double s) {
     ++mNodeTouchedCnt;
 
     // return payoff for terminal states
     if (game.done()) {
-        return std::make_tuple(game.payoff(playerIndex) / s, 1.0f);
+        return std::make_tuple(game.payoff(playerIndex) / s, 1.0);
     }
 
     // get information set string representation
@@ -392,15 +555,16 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
     }
 
     // get current strategy through regret-matching
-    const float *strategy = node->strategy();
+    node->updateStrategy();
+    const double *strategy = node->strategy();
 
     // if current player is the target player, sample a single action according to epsilon-on-policy
     // otherwise, sample a single action according to the player's strategy
-    const float epsilon = 0.6;
-    float probability[actionNum];
+    const double epsilon = 0.6;
+    double probability[actionNum];
     if (player == playerIndex) {
         for (int a = 0; a < actionNum; ++a) {
-            probability[a] = (epsilon / (float) actionNum) + (1.0f - epsilon) * strategy[a];
+            probability[a] = (epsilon / (double) actionNum) + (1.0 - epsilon) * strategy[a];
         }
     } else {
         for (int a = 0; a < actionNum; ++a) {
@@ -411,20 +575,20 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
     const int action = dist(mEngine);
 
     // for sampled action, recursively call cfr with additional history and probability
-    float util, pTail;
+    double util, pTail;
     auto game_cp(game);
     game_cp.step(action);
-    const float newPi = pi * (player == playerIndex ? strategy[action] : 1.0f);
-    const float newPo = po * (player == playerIndex ? 1.0f : strategy[action]);
-    std::tuple<float, float> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, newPi, newPo, s * probability[action]);
+    const double newPi = pi * (player == playerIndex ? strategy[action] : 1.0);
+    const double newPo = po * (player == playerIndex ? 1.0 : strategy[action]);
+    std::tuple<double, double> ret = outcomeSamplingCFR(game_cp, playerIndex, iteration, newPi, newPo, s * probability[action]);
     util = std::get<0>(ret);
     pTail = std::get<1>(ret);
     if (player == playerIndex) {
         // for each action, compute and accumulate counterfactual regret
-        const float W = util * po;
+        const double W = util * po;
         for (int a = 0; a < actionNum; ++a) {
-            const float regret = a == action ? W * (1.0f - strategy[action]) * pTail : -W * pTail * strategy[action];
-            const float regretSum = node->regretSum(a) + regret;
+            const double regret = a == action ? W * (1.0 - strategy[action]) * pTail : -W * pTail * strategy[action];
+            const double regretSum = node->regretSum(a) + regret;
             node->regretSum(a, regretSum);
         }
     } else {
@@ -439,9 +603,8 @@ std::tuple<float, float> Trainer<T>::outcomeSamplingCFR(const T &game, const int
 template <typename T>
 void Trainer<T>::writeStrategyToBin(const int iteration) const {
     for (auto &itr : mNodeMap) {
-//        std::cout << itr.first << ":";
-        for (int i = 0; i < itr.first.size(); ++i) {
-            std::cout << int(itr.first[i]);
+        for (char c : itr.first) {
+            std::cout << int(c);
         }
         std::cout << ":";
         for (int i = 0; i < itr.second->actionNum(); ++i) {

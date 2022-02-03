@@ -22,5 +22,5 @@ int main(int argc, char *argv[]) {
 
     Trainer::Trainer<Kuhn::Game> trainer(p.get<std::string>("algorithm"),
                                          p.exist("seed") ? p.get<uint32_t>("seed") : std::random_device()());
-    trainer.train(p.get<uint64_t>("iteration"));
+    trainer.train(int(p.get<uint64_t>("iteration")));
 }

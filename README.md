@@ -39,7 +39,7 @@ In addition to this argument, the following options can be selected:
 Once the experiment is completed, you should have a binary file that represents the average strategy, like `strategies/kuhn/strategy_vanilla.bin`.
 
 ### Evaluating average strategies
-If you have finished computing an approximate Nash equilibrium, you can compute the expected payoff of the obtained average strategy:
+If you have finished computing an approximate Nash equilibrium, you can compute the expected payoffs and exploitability of the obtained average strategy profile:
 
 ```bash
 $ cd Game
@@ -50,10 +50,11 @@ $ ./build/game --strategy-path-0="../strategies/kuhn/strategy_vanilla.bin" --str
 This command requires arguments that the paths to the binary files that represent the average strategies for players.
 You should specify the path for each player as `strategy-path-0`, `strategy-path-1` and so on.
 
-As a result of executing these commands, the command-line interface will output the expected payoff of each player:
+As a result of executing these commands, the command-line interface will output the expected payoffs and exploitability of the given strategy profile:
 
 ```bash
-expected payoffs: (-0.0555557,0.0555557,)
+expected payoffs: (-0.0555556,0.0555556,)
+exploitability: 6.59955e-06
 ```
 
 ### Running with Docker
