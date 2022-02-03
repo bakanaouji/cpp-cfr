@@ -39,7 +39,6 @@ const double *Node::averageStrategy() {
     if (!mAlreadyCalculated) {
         calcAverageStrategy();
     }
-    calcAverageStrategy();
     return mAverageStrategy;
 }
 
