@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
     // initialize strategies
     std::vector<Agent::CFRAgent<GAME> *> cfrAgents(GAME::playerNum());
-    std::vector<std::function<const float *(const GAME &)>> strategies(GAME::playerNum());
+    std::vector<std::function<const double *(const GAME &)>> strategies(GAME::playerNum());
     for (int i = 0; i < GAME::playerNum(); ++i) {
         cfrAgents[i] = new Agent::CFRAgent<GAME>(engine, p.get<std::string>("strategy-path-" + std::to_string(i)));
         const Agent::CFRAgent<GAME> &agent = *cfrAgents[i];
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
     // calculate expected payoffs
     game.reset(false);
-    std::vector<float> payoffs = Trainer::Trainer<GAME>::CalculatePayoff(game, strategies);
+    std::vector<double> payoffs = Trainer::Trainer<GAME>::CalculatePayoff(game, strategies);
     std::cout << "expected payoffs: (";
     for (int i = 0; i < GAME::playerNum(); ++i) {
         std::cout << payoffs[i] << ",";
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
     // calculate exploitability
     game.reset(false);
-    float exploitability = Trainer::Trainer<GAME>::CalculateExploitability(game, strategies);
+    double exploitability = Trainer::Trainer<GAME>::CalculateExploitability(game, strategies);
     std::cout << "exploitability: " << exploitability << std::endl;
 
     // finalize

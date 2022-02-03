@@ -37,7 +37,7 @@ int CFRAgent<T>::action(const T &game) const {
         return 0;
     }
     const std::string infoSetStr = game.infoSetStr();
-    const float *probability = mStrategy.at(infoSetStr)->averageStrategy();
+    const double *probability = mStrategy.at(infoSetStr)->averageStrategy();
     std::discrete_distribution<int> dist(probability, probability + game.actionNum());
     return dist(mEngine);
 }
@@ -46,7 +46,7 @@ int CFRAgent<T>::action(const T &game) const {
 /// @param game game
 /// @return list of the probabilities
 template <typename T>
-const float *CFRAgent<T>::strategy(const T &game) const {
+const double *CFRAgent<T>::strategy(const T &game) const {
     return mStrategy.at(game.infoSetStr())->averageStrategy();
 }
 

@@ -11,7 +11,7 @@
 namespace Kuhn {
 
 /// @param engine Mersenne Twister pseudo-random generator
-Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1), mChanceProbability(0.0f), mFirstBetTurn(-1), mBetPlayerNum(0), mTurnNum(0), mDone(false) {
+Game::Game(std::mt19937 &engine) : mEngine(engine), mPayoff(), mCurrentPlayer(-1), mChanceProbability(0.0), mFirstBetTurn(-1), mBetPlayerNum(0), mTurnNum(0), mDone(false) {
     for (auto & infoSet : mInfoSets) {
         for (uint8_t & i : infoSet) {
             i = 0;
@@ -54,8 +54,8 @@ void Game::reset(bool skipChanceAction) {
         mCards[i] = i;
     }
     // shuffle cards
-    for (int c1 = mCards.size() - 1; c1 > 0; --c1) {
-        const int c2 = mEngine() % (c1 + 1);
+    for (int c1 = int(mCards.size()) - 1; c1 > 0; --c1) {
+        const int c2 = int(mEngine()) % (c1 + 1);
         const int tmp = mCards[c1];
         mCards[c1] = mCards[c2];
         mCards[c2] = tmp;
@@ -76,13 +76,13 @@ void Game::step(const int action) {
     // chance node action
     if (mCurrentPlayer == PlayerNum + 1) {
         constexpr int ChanceAN = ChanceActionNum();
-        mChanceProbability = 1.0f / float(ChanceAN);
+        mChanceProbability = 1.0 / double(ChanceAN);
         for (int i = 0; i < CardNum; ++i) {
             mCards[i] = i;
         }
         // shuffle cards
         int a = action;
-        for (int c1 = mCards.size() - 1; c1 > 0; --c1) {
+        for (int c1 = int(mCards.size()) - 1; c1 > 0; --c1) {
             const int c2 = a % (c1 + 1);
             const int tmp = mCards[c1];
             mCards[c1] = mCards[c2];
@@ -103,8 +103,8 @@ void Game::step(const int action) {
     // update history
     mTurnNum += 1;
     mBetPlayerNum += action;
-    for (int i = 0; i < PlayerNum; ++i) {
-        mInfoSets[i][mTurnNum] = action;
+    for (auto &infoSet : mInfoSets) {
+        infoSet[mTurnNum] = action;
     }
     if (mFirstBetTurn == -1 && action == 1) {
         mFirstBetTurn = mTurnNum;
@@ -188,7 +188,7 @@ void Game::step(const int action) {
 /// @brief Get the payoff of the specified player
 /// @param playerIndex index of the player
 /// @return payoff
-float Game::payoff(const int playerIndex) const {
+double Game::payoff(const int playerIndex) const {
     return mPayoff[playerIndex];
 }
 
@@ -222,7 +222,7 @@ int Game::currentPlayer() const {
 
 /// @brief Get the likelihood that the last action is chosen by the chance player
 /// @return likelihood
-float Game::chanceProbability() const {
+double Game::chanceProbability() const {
     return mChanceProbability;
 }
 
