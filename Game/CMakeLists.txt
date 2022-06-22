@@ -1,19 +1,6 @@
-cmake_minimum_required(VERSION 3.5)
-project(game)
+add_executable(game main.cpp)
 
-set(CMAKE_CXX_STANDARD 14)
-
-file(GLOB CFRSource ../RegretMinimization/Trainer/*.cpp)
-file(GLOB AgentSource ../RegretMinimization/Agent/*.cpp)
-file(GLOB KuhnSource Kuhn/*.cpp)
-add_executable(game main.cpp ${KuhnSource} ${CFRSource} ${AgentSource})
-
-target_include_directories(game PRIVATE Kuhn ../RegretMinimization/Agent ../RegretMinimization/Trainer ../lib)
-
-find_package(Boost COMPONENTS serialization filesystem)
-if(Boost_FOUND)
-    target_include_directories(game PRIVATE ${Boost_INCLUDE_DIRS})
-    target_link_libraries(game ${Boost_LIBRARIES})
-endif()
+target_link_libraries(game Kuhn Trainer Agent)
+target_include_directories(game PRIVATE ../lib)
 
 add_subdirectory(Kuhn)

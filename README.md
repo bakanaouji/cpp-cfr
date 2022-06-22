@@ -18,14 +18,14 @@ Currently, this repository provides the following variants of CFR implementation
 In order to compute an approximate Nash equilibrium in an imperfect information game, first, you should build the project:
 
 ```bash
-$ cd RegretMinimization
 $ sh build.sh
+$ cd build
 ```
 
 Next, execute the following commands to run an experiment:
 
 ```bash
-$ ./build/cpp_cfr --iteration=1000000 
+$ ./RegretMinimization/run_cfr --iteration=1000000
 ```
 
 This command requires an argument that specifies the number of iterations of CFR.
@@ -42,9 +42,7 @@ Once the experiment is completed, you should have a binary file that represents 
 If you have finished computing an approximate Nash equilibrium, you can compute the expected payoffs and exploitability of the obtained average strategy profile:
 
 ```bash
-$ cd Game
-$ sh build.sh
-$ ./build/game --strategy-path-0="../strategies/kuhn/strategy_vanilla.bin" --strategy-path-1="../strategies/kuhn/strategy_vanilla.bin"
+$ ./Game/game --strategy-path-0="../strategies/kuhn/strategy_vanilla.bin" --strategy-path-1="../strategies/kuhn/strategy_vanilla.bin"
 ```
 
 This command requires arguments that the paths to the binary files that represent the average strategies for players.
