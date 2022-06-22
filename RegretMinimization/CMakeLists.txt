@@ -6,11 +6,11 @@ set(CMAKE_CXX_STANDARD 14)
 file(GLOB KuhnSource ../Game/Kuhn/*.cpp)
 add_executable(cpp_cfr main.cpp Trainer/Trainer.cpp Trainer/Node.cpp ${KuhnSource})
 
-include_directories(Trainer ../Game/Kuhn ../lib)
+target_include_directories(cpp_cfr PRIVATE Trainer ../Game/Kuhn ../lib)
 
 find_package(Boost COMPONENTS serialization filesystem)
 if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
+  target_include_directories(cpp_cfr PRIVATE ${Boost_INCLUDE_DIRS})
   target_link_libraries(cpp_cfr ${Boost_LIBRARIES})
 endif()
 
